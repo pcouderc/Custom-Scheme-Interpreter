@@ -13,7 +13,7 @@ SOURCES = util.mli ast.mli Parser/parser.mli heap.mli eval.mli repl.mli \
 util.ml ast.ml Parser/lexer.ml Parser/parser.ml heap.ml eval.ml repl.ml
 
 .PHONY: all
-all: interpreter.exe
+all: interpreter
 
 .PHONY: clean
 clean:
@@ -25,8 +25,8 @@ clean:
       done; \
     done
 
-interpreter.exe: $(SOURCES)
-	ocamlc -o interpreter.exe -g -I Parser str.cma $(SOURCES)
+interpreter: $(SOURCES)
+	ocamlc -o $@ -g -I Parser str.cma $(SOURCES)
 
 Parser/parser.mli Parser/parser.ml: Parser/parser.mly
 	ocamlyacc -v Parser/parser.mly
