@@ -7,7 +7,7 @@ let parse (s : string) : expr list =
   Parser.main Lexer.token (Lexing.from_string s)
 
 let print_bindings =
-  List.iter (fun (id, var) -> 
+  List.iter (fun (id, var) ->
     print_endline ("  " ^ id ^ ": " ^ (value_to_string !var)))
 
 let print_help _ =
@@ -44,19 +44,19 @@ let rec eval_one (env : env) (expr : expr) : env =
   match expr with
       Def_e (xs, e) ->  (match xs with
        | x::[] -> print_value (eval e env); (bind x (eval e env) env)
-       | x::tl ->  print_value (eval (Fun_e(tl,e)) env); 
-          (bind x (eval (Fun_e(tl,e)) env) env)  
-       | [] -> runtime "Not possible")    
+       | x::tl ->  print_value (eval (Fun_e(tl,e)) env);
+          (bind x (eval (Fun_e(tl,e)) env) env)
+       | [] -> runtime "Not possible")
     | Defrec_e (xs, e) -> (match xs with
-       | x::[] -> print_value (eval e env); 
-         let newenv = bind x (Undef) env in 
+       | x::[] -> print_value (eval e env);
+         let newenv = bind x (Undef) env in
            update x (eval e newenv) newenv; newenv
-       | x::tl -> let newenv = (bind x (Undef) env) in 
-           print_value (eval (Fun_e(tl,e)) env); 
+       | x::tl -> let newenv = (bind x (Undef) env) in
+           print_value (eval (Fun_e(tl,e)) env);
            update x (eval (Fun_e(tl,e)) newenv) newenv; newenv
        | _ -> runtime "Not possible rec")
-    | Unop_e (Load, e) -> (match (eval e env) with 
-       | Str s -> eval_list env (parse (read_file s)) 
+    | Unop_e (Load, e) -> (match (eval e env) with
+       | Str s -> eval_list env (parse (read_file s))
        | _ -> print_string "Not possible load"; env)
     | _ ->
         let v = eval expr env in
@@ -66,13 +66,13 @@ and eval_list (env : env) (expr_list : expr list) : env =
   List.fold_left eval_one env expr_list
 
 let rec repl env =
-  print_string "zardoz> ";
+  print_string "> ";
   try
     let input = read_console() in
-    if input = ":help\n" || input = ":h\n"then 
+    if input = ":help\n" || input = ":h\n"then
       (print_help (); repl env)
     else if input = ":quit\n" || input = ":q\n"then ()
-    else if input = ":bindings\n" || input = ":b\n" then 
+    else if input = ":bindings\n" || input = ":b\n" then
       (print_bindings env; repl env)
     else
       let expr_list = parse input in

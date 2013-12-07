@@ -17,7 +17,7 @@ all: interpreter
 
 .PHONY: clean
 clean:
-	rm -f interpreter.exe
+	rm -f interpreter
 	rm -f Parser/Parser.mli Parser/parser.ml Parser/lexer.ml
 	for X in . Parser; do \
       for Y in cmo cmi output; do \
