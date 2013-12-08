@@ -1,3 +1,11 @@
+This interpreter has originaly been developped by Debarghya Das.
+
+This fork aims to add it Call/cc and the ability to quote s-expressions for a university project. 
+It is distributed under the GPLv3 license.
+
+
+# Original README
+
 DO NOT place anything in the Parser folder, or alter it at all.
 If you place .ml files in there, they may be deleted by the scripts.
 
