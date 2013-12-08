@@ -19,7 +19,9 @@ let keywords =
      "definerec", DEFINEREC;
      "delay", DELAY;
      "force", FORCE;
-     "callcc", CALLCC
+     "callcc", CALLCC;
+     "eval", EVAL;
+     "quote", QUOTE
     ]
 
 let keyword_tbl = Hashtbl.create 256
@@ -37,6 +39,7 @@ rule token = parse
     id as id   { try Hashtbl.find keyword_tbl (String.lowercase id) with Not_found -> ID id }
   | "("            { LPAREN }
   | ")"            { RPAREN }
+  | "'"            { QUOTE }
   | "+"            { PLUS }
   | "\""           { STRING (String.concat "" (string lexbuf)) }
   | "-"            { MINUS }

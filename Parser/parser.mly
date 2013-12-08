@@ -4,8 +4,8 @@
 
 %token DEFINE DEFINEREC LAMBDA LET LETREC IF
 %token LPAREN RPAREN
-%token DELAY FORCE CALLCC
-%token DOT
+%token DELAY FORCE CALLCC EVAL
+%token DOT QUOTE
 %token EQ NEQ LT LEQ GT GEQ AND OR NOT
 %token PLUS MINUS MUL DIV MOD
 %token LIST CONS CAR CDR NIL NULL
@@ -49,9 +49,12 @@ expr :
  | STRING    { Str_e $1 }
  | TRUE      { Bool_e true }
  | FALSE     { Bool_e false }
+ | QUOTE expr { Quote_e $2 }
+ | LPAREN QUOTE expr RPAREN           { Quote_e $3 }
  | LPAREN DELAY expr RPAREN           { Delayed_e $3 }
  | LPAREN FORCE expr RPAREN           { Forced_e $3 }
  | LPAREN CALLCC expr RPAREN          { Callcc_e $3 }
+ | LPAREN EVAL expr RPAREN            { Eval_e $3 }
  | LPAREN LAMBDA idseq expr RPAREN    { Fun_e ($3, $4) }
  | LPAREN DEFINE idseq expr RPAREN    { Def_e ($3, $4) }
  | LPAREN DEFINEREC idseq expr RPAREN { Defrec_e ($3, $4) }
