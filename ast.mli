@@ -18,7 +18,9 @@ type op =
   | Cdr
   | Null
   | Load
+
 val op_to_string : op -> string
+
 type expr =
     Int_e of int
   | Str_e of string
@@ -37,4 +39,6 @@ type expr =
   | Unop_e of op * expr
   | Delayed_e of expr
   | Forced_e of expr
+  | Callcc_e of expr
+
 val to_string : expr -> id

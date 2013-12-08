@@ -17,8 +17,9 @@ let keywords =
      "load", LOAD;
      "letrec", LETREC;
      "definerec", DEFINEREC;
-	 "delay", DELAY;
-	 "force", FORCE;
+     "delay", DELAY;
+     "force", FORCE;
+     "callcc", CALLCC
     ]
 
 let keyword_tbl = Hashtbl.create 256
@@ -71,4 +72,3 @@ and comment = parse
     nl               { token lexbuf }
   | eof              { EOF }
   | _                { comment lexbuf }
-

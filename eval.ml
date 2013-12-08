@@ -10,39 +10,45 @@ let rec eval (ast : expr) (env : env) : value =
   | Def_e _ -> runtime "define may occur at top level only"
   | Defrec_e _ -> runtime "definerec may occur at top level only"
   | Nil_e -> Nil
-  | Id_e id -> (match (lookup id env) with 
-      | None -> Nil 
-      | Some v -> v)
+  | Id_e id ->
+    (match (lookup id env) with
+    | None -> Nil
+    | Some v -> v)
   | Cons_e (x, y) -> Cons ((eval x env),(eval y env))
-  | Let_e (x, e1, e2) -> let newenv=(bind x (eval e1 env) env) in 
-    (eval e2 newenv)
-  | Letrec_e (x, e1, e2) ->  let newenv = (bind x (Undef) env) in 
-     update x (eval e1 newenv) newenv; (eval e2 newenv)
-  | If_e (b, e1, e2) -> (match (eval b env) with
-     | Bool bee -> if (bee) then (eval e1 env) else (eval e2 env)
-     | _ -> runtime "No bool case matched for if")
-  | Apply_e (e1, es) -> let foo acc ele = apply acc (eval ele env) in 
-          let res = List.fold_left foo (eval e1 env) es in 
-          (match res with
-            | Closure(Fun_e(xs,e),env) -> 
-                (match xs with 
-                 | [] -> eval e env 
-                 | _ -> res)
-            | _ -> runtime "No closure match 2")
+  | Let_e (x, e1, e2) -> let newenv=(bind x (eval e1 env) env) in
+                         (eval e2 newenv)
+  | Letrec_e (x, e1, e2) ->  let newenv = (bind x (Undef) env) in
+                             update x (eval e1 newenv) newenv; (eval e2 newenv)
+  | If_e (b, e1, e2) ->
+    (match (eval b env) with
+    | Bool bee -> if (bee) then (eval e1 env) else (eval e2 env)
+    | _ -> runtime "No bool case matched for if")
+  | Apply_e (e1, es) ->
+    let foo acc ele = apply acc (eval ele env) in
+    let res = List.fold_left foo (eval e1 env) es in
+    (match res with
+    | Closure(Fun_e(xs,e),env) ->
+      (match xs with
+      | [] -> eval e env
+      | _ -> res)
+    | _ -> runtime "No closure match 2")
   | Fun_e (xs, e) ->
-      Closure (Fun_e(xs,e),env)
+    Closure (Fun_e(xs,e),env)
   | Binop_e (op, e1, e2) -> apply_binop op (eval e1 env) (eval e2 env)
   | Unop_e (op, e) -> apply_unop op (eval e env)
   | Delayed_e (ex) -> Closure (ex,env);
-  | Forced_e (del_expr) -> let res =  (eval del_expr env) in match res with
+  | Forced_e (del_expr) ->
+    let res = (eval del_expr env) in
+    (match res with
       | Closure(a,b) -> eval a b
-      | _ -> res
+      | _ -> res)
+  | _ -> runtime "No implemented yet"
 
 and apply (f : value) (v : value) : value =
  (match f with
    | Closure(Fun_e(xs,e),env) -> (match xs with
        | [] -> eval e env
-       | idhd::idtl -> 
+       | idhd::idtl ->
          let newenv = bind idhd v env in Closure(Fun_e(idtl,e),newenv) )
    | _ -> runtime "No closure match")
 
