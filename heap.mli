@@ -1,7 +1,7 @@
 type value =
     Int of int
   | Str of string
-  | Sym of Ast.expr
+  | Ast of Ast.expr
   | Bool of bool
   | Closure of Ast.expr * env
   | Cons of value * value

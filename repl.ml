@@ -42,24 +42,24 @@ let read_file (filename : string) : string =
 
 let rec eval_one (env : env) (expr : expr) : env =
   match expr with
-      Def_e (xs, e) ->  (match xs with
-       | x::[] -> print_value (eval e env); (bind x (eval e env) env)
-       | x::tl ->  print_value (eval (Fun_e(tl,e)) env);
-          (bind x (eval (Fun_e(tl,e)) env) env)
+      Def_e (xs, e) -> (match xs with
+       | x::[] -> print_value (eval Nil_e e env); (bind x (eval Nil_e e env) env)
+       | x::tl ->  print_value (eval Nil_e (Fun_e(tl,e)) env);
+          (bind x (eval Nil_e (Fun_e(tl,e)) env) env)
        | [] -> runtime "Not possible")
     | Defrec_e (xs, e) -> (match xs with
-       | x::[] -> print_value (eval e env);
+       | x::[] -> print_value (eval Nil_e e env);
          let newenv = bind x (Undef) env in
-           update x (eval e newenv) newenv; newenv
+           update x (eval Nil_e e newenv) newenv; newenv
        | x::tl -> let newenv = (bind x (Undef) env) in
-           print_value (eval (Fun_e(tl,e)) env);
-           update x (eval (Fun_e(tl,e)) newenv) newenv; newenv
+           print_value (eval Nil_e (Fun_e(tl,e)) env);
+           update x (eval Nil_e (Fun_e(tl,e)) newenv) newenv; newenv
        | _ -> runtime "Not possible rec")
-    | Unop_e (Load, e) -> (match (eval e env) with
+    | Unop_e (Load, e) -> (match (eval Nil_e e env) with
        | Str s -> eval_list env (parse (read_file s))
        | _ -> print_string "Not possible load"; env)
     | _ ->
-        let v = eval expr env in
+        let v = eval Nil_e expr env in
           print_value v; env
 
 and eval_list (env : env) (expr_list : expr list) : env =

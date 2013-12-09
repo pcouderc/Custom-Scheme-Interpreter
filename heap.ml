@@ -5,7 +5,7 @@ open Util
 type value =
   | Int of int
   | Str of string
-  | Sym of expr
+  | Ast of expr
   | Bool of bool
   | Closure of expr * env
   | Cons of value * value
@@ -46,7 +46,7 @@ let rec value_to_string (x : value) : string =
     match x with
     | Int n -> string_of_int n
     | Str s -> s
-    | Sym expr -> "'" ^ Ast.to_string expr
+    | Ast expr -> "'" ^ Ast.to_string expr
     | Bool b -> string_of_bool b
     | Closure (a,b) -> "<fun>"
     | Nil -> "()"

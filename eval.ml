@@ -2,7 +2,7 @@ open Ast
 open Heap
 open Util
 
-let rec eval (ast : expr) (env : env) : value =
+let rec eval k (ast : expr) (env : env) : value =
   match ast with
   | Int_e n -> Int n
   | Str_e s -> Str s
@@ -14,50 +14,52 @@ let rec eval (ast : expr) (env : env) : value =
     (match (lookup id env) with
     | None -> Nil
     | Some v -> v)
-  | Cons_e (x, y) -> Cons ((eval x env),(eval y env))
-  | Let_e (x, e1, e2) -> let newenv=(bind x (eval e1 env) env) in
-                         (eval e2 newenv)
+  | Cons_e (x, y) -> Cons ((eval ast x env),(eval ast y env))
+  | Let_e (x, e1, e2) -> let newenv=(bind x (eval ast e1 env) env) in
+                         (eval ast e2 newenv)
   | Letrec_e (x, e1, e2) ->  let newenv = (bind x (Undef) env) in
-                             update x (eval e1 newenv) newenv; (eval e2 newenv)
+                             update x (eval ast e1 newenv) newenv; (eval ast e2 newenv)
   | If_e (b, e1, e2) ->
-    (match (eval b env) with
-    | Bool bee -> if (bee) then (eval e1 env) else (eval e2 env)
+    (match (eval ast b env) with
+    | Bool bee -> if (bee) then (eval ast e1 env) else (eval ast e2 env)
     | _ -> runtime "No bool case matched for if")
   | Apply_e (e1, es) ->
-    let foo acc ele = apply acc (eval ele env) in
-    let res = List.fold_left foo (eval e1 env) es in
+    let foo acc ele = apply ast acc (eval ast ele env) in
+    let res = List.fold_left foo (eval ast e1 env) es in
     (match res with
     | Closure(Fun_e(xs,e),env) ->
       (match xs with
-      | [] -> eval e env
+      | [] -> eval ast e env
       | _ -> res)
     | _ -> runtime "No closure match 2")
   | Fun_e (xs, e) ->
     Closure (Fun_e(xs,e),env)
-  | Binop_e (op, e1, e2) -> apply_binop op (eval e1 env) (eval e2 env)
-  | Unop_e (op, e) -> apply_unop op (eval e env)
+  | Binop_e (op, e1, e2) -> apply_binop op (eval ast e1 env) (eval ast e2 env)
+  | Unop_e (op, e) -> apply_unop op (eval ast e env)
   | Delayed_e (ex) -> Closure (ex,env);
   | Forced_e (del_expr) ->
-    let res = (eval del_expr env) in
+    let res = (eval ast del_expr env) in
     (match res with
-      | Closure(a,b) -> eval a b
+      | Closure(a,b) -> eval ast a b
       | _ -> res)
-  | Quote_e expr -> apply_quote env expr
+  | Quote_e expr -> begin match expr with | Int_e _ | Str_e _ | Bool_e _ |
+      Nil_e -> eval ast expr env | _ -> Ast expr end
   | Eval_e expr ->
-    begin match eval expr env with Sym e -> eval e env | e -> e end
-  | Callcc_e expr -> assert false
+    begin match eval ast expr env with Ast e -> eval ast e env | e -> e end
+  | Callcc_e expr ->
+    begin match eval ast expr env with
+      Closure (Fun_e ([k], e), env) -> assert false
+
+
+    | _ -> runtime "agument type must be  ('a -> 'b) "
+    end
   (* | _ -> runtime "No implemented yet" *)
 
 
-and apply_quote env expr =
-  match expr with
-  | Int_e _ | Str_e _ | Bool_e _ | Nil_e -> eval expr env
-  | _ -> Sym expr
-
-and apply (f : value) (v : value) : value =
+and apply ast (f : value) (v : value) : value =
  (match f with
    | Closure(Fun_e(xs,e),env) -> (match xs with
-       | [] -> eval e env
+       | [] -> eval ast e env
        | idhd::idtl ->
          let newenv = bind idhd v env in Closure(Fun_e(idtl,e),newenv) )
    | _ -> runtime "No closure match")
