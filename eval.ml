@@ -42,7 +42,17 @@ let rec eval (ast : expr) (env : env) : value =
     (match res with
       | Closure(a,b) -> eval a b
       | _ -> res)
-  | _ -> runtime "No implemented yet"
+  | Quote_e expr -> apply_quote env expr
+  | Eval_e expr ->
+    begin match eval expr env with Sym e -> eval e env | e -> e end
+  | Callcc_e expr -> assert false
+  (* | _ -> runtime "No implemented yet" *)
+
+
+and apply_quote env expr =
+  match expr with
+  | Int_e _ | Str_e _ | Bool_e _ | Nil_e -> eval expr env
+  | _ -> Sym expr
 
 and apply (f : value) (v : value) : value =
  (match f with
@@ -136,3 +146,6 @@ and apply_unop (op : op) (v : value) : value =
        | _ -> runtime "inappropriate argument for null")
   | Load -> runtime "load may only occur at top level"
   | _ -> runtime "not a unary operator"
+
+
+
