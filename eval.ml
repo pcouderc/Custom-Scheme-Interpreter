@@ -34,7 +34,10 @@ let rec eval k (ast : expr) (env : env) : value =
     | _ -> runtime "No closure match 2")
   | Fun_e (xs, e) ->
     Closure (Fun_e(xs,e),env)
-  | Binop_e (op, e1, e2) -> apply_binop op (eval ast e1 env) (eval ast e2 env)
+  | Binop_e (op, e1, e2) ->
+    let res1 = eval ast e1 env in
+    let res2 = eval ast e2 env in
+      apply_binop op res1 res2
   | Unop_e (op, e) -> apply_unop op (eval ast e env)
   | Delayed_e (ex) -> Closure (ex,env);
   | Forced_e (del_expr) ->
@@ -49,8 +52,6 @@ let rec eval k (ast : expr) (env : env) : value =
   | Callcc_e expr ->
     begin match eval ast expr env with
       Closure (Fun_e ([k], e), env) -> assert false
-
-
     | _ -> runtime "agument type must be  ('a -> 'b) "
     end
   (* | _ -> runtime "No implemented yet" *)
@@ -150,4 +151,22 @@ and apply_unop (op : op) (v : value) : value =
   | _ -> runtime "not a unary operator"
 
 
-
+and to_continuation first env ast =
+  match ast with
+  | Int_e _ | Str_e _ | Bool_e _
+  | Def_e _ | Defrec_e _ | Nil_e | Id_e _ -> [ast]
+  | Cons_e (x, y) -> assert false
+  | Let_e (x, e1, e2) -> assert false
+  | Letrec_e (x, e1, e2) -> assert false
+  | If_e (b, e1, e2) -> assert false
+  | Apply_e (e1, es) -> assert false
+  | Fun_e (xs, e) -> [ast]
+  | Binop_e (op, e1, e2) ->
+    (Fun_e (["x"], Binop_e (op, Id_e "x", e2))) ::
+      [Fun_e (["x"], Binop_e (op, e1, Id_e "x"))]
+  | Unop_e (op, e) -> [Fun_e (["x"], Unop_e (op, (Id_e "x")))]
+  | Delayed_e (ex) -> [Fun_e (["x"], Delayed_e (Id_e "x"))]
+  | Forced_e (del_expr) -> [Fun_e (["x"], Forced_e (Id_e "x"))]
+  | Quote_e expr -> [ast]
+  | Eval_e expr -> [Fun_e (["x"], Eval_e (Id_e "x"))]
+  | Callcc_e expr -> [Fun_e (["x"], Callcc_e (Id_e "x"))]
