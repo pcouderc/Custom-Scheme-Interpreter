@@ -61,6 +61,8 @@ type expr =
   | Delayed_e of expr
   | Forced_e of expr
   | Callcc_e of expr
+  | K (* takes an already evaluated argument that waits this expr as its
+         continuation *)
   | Eval_e of expr
   | Quote_e of expr
 
@@ -115,3 +117,4 @@ let rec to_string (e : expr) : string =
     | Callcc_e ex -> "call_cc " ^ (to_string ex)
     | Eval_e ex -> "eval " ^ (to_string ex)
     | Quote_e ex -> "'" ^ (to_string ex)
+    | K -> "k"

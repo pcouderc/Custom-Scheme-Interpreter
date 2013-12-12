@@ -40,7 +40,9 @@ type expr =
   | Delayed_e of expr
   | Forced_e of expr
   | Callcc_e of expr
+  | K
   | Eval_e of expr
   | Quote_e of expr
+
 
 val to_string : expr -> id

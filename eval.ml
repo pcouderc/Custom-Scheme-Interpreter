@@ -52,9 +52,9 @@ let rec eval k (ast : expr) (env : env) : value =
   | Callcc_e expr ->
     begin match eval ast expr env with
       Closure (Fun_e ([k], e), env) -> assert false
-    | _ -> runtime "agument type must be  ('a -> 'b) "
+    | _ -> runtime "argument type must be  ('a -> 'b) "
     end
-  (* | _ -> runtime "No implemented yet" *)
+  | _ -> runtime "No implemented yet"
 
 
 and apply ast (f : value) (v : value) : value =
@@ -170,3 +170,78 @@ and to_continuation first env ast =
   | Quote_e expr -> [ast]
   | Eval_e expr -> [Fun_e (["x"], Eval_e (Id_e "x"))]
   | Callcc_e expr -> [Fun_e (["x"], Callcc_e (Id_e "x"))]
+  | K -> assert false
+
+(** Somes tests to represent and evaluate using continuation *)
+
+and cont heap k env =
+  match k with
+  | [] -> List.hd heap
+  | ast :: k -> eval_with_k heap k ast env
+
+and eval_with_k heap k ast env =
+  match ast with
+  | K -> runtime "K shouldn't be evaluated"
+  | Int_e n -> cont ((Int n) :: heap) k env
+  | Str_e s -> cont ((Str s) :: heap) k env
+  | Bool_e b -> cont ((Bool b) :: heap) k env
+  | Def_e _ -> runtime "define may occur at top level only"
+  | Defrec_e _ -> runtime "definerec may occur at top level only"
+  | Nil_e -> cont (Nil :: heap) k env
+  | Id_e id ->
+    begin
+      match (lookup id env) with
+      | None -> cont (Nil :: heap) k env
+      | Some v -> cont (v :: heap) k env
+    end
+
+  | Cons_e (K, K) ->
+    let x = List.hd heap in
+    let y = List.hd @@ List.tl heap in
+    let heap = List.tl @@ List.tl heap in
+    cont (Cons (x, y) :: heap) k env
+  | Cons_e (K, y) ->
+    eval_with_k heap (Cons_e (K, K) :: k) y env
+  | Cons_e (x, y) ->
+    eval_with_k heap (Cons_e (K, y) :: k) x env
+
+  | Let_e (x, e1, e2) -> let newenv=(bind x (eval ast e1 env) env) in
+                         (eval ast e2 newenv)
+  | Letrec_e (x, e1, e2) ->  let newenv = (bind x (Undef) env) in
+                             update x (eval ast e1 newenv) newenv; (eval ast e2 newenv)
+  | If_e (b, e1, e2) ->
+    (match (eval ast b env) with
+    | Bool bee -> if (bee) then (eval ast e1 env) else (eval ast e2 env)
+    | _ -> runtime "No bool case matched for if")
+  | Apply_e (e1, es) ->
+    let foo acc ele = apply ast acc (eval ast ele env) in
+    let res = List.fold_left foo (eval ast e1 env) es in
+    (match res with
+    | Closure(Fun_e(xs,e),env) ->
+      (match xs with
+      | [] -> eval ast e env
+      | _ -> res)
+    | _ -> runtime "No closure match 2")
+  | Fun_e (xs, e) ->
+    Closure (Fun_e(xs,e),env)
+  | Binop_e (op, e1, e2) ->
+    let res1 = eval ast e1 env in
+    let res2 = eval ast e2 env in
+      apply_binop op res1 res2
+  | Unop_e (op, e) -> apply_unop op (eval ast e env)
+  | Delayed_e (ex) -> Closure (ex,env);
+  | Forced_e (del_expr) ->
+    let res = (eval ast del_expr env) in
+    (match res with
+      | Closure(a,b) -> eval ast a b
+      | _ -> res)
+  | Quote_e expr -> begin match expr with | Int_e _ | Str_e _ | Bool_e _ |
+      Nil_e -> eval ast expr env | _ -> Ast expr end
+  | Eval_e expr ->
+    begin match eval ast expr env with Ast e -> eval ast e env | e -> e end
+  | Callcc_e expr ->
+    begin match eval ast expr env with
+      Closure (Fun_e ([k], e), env) -> assert false
+    | _ -> runtime "argument type must be  ('a -> 'b) "
+    end
+  (* | _ -> runtime "No implemented yet" *)
