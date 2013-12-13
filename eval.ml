@@ -196,8 +196,8 @@ and eval_with_k heap k ast env =
     end
 
   | Cons_e (K, K) ->
-    let x = List.hd heap in
-    let y = List.hd @@ List.tl heap in
+    let y = List.hd heap in
+    let x = List.hd @@ List.tl heap in
     let heap = List.tl @@ List.tl heap in
     cont (Cons (x, y) :: heap) k env
   | Cons_e (K, y) ->
@@ -205,8 +205,16 @@ and eval_with_k heap k ast env =
   | Cons_e (x, y) ->
     eval_with_k heap (Cons_e (K, y) :: k) x env
 
-  | Let_e (x, e1, e2) -> let newenv=(bind x (eval ast e1 env) env) in
-                         (eval ast e2 newenv)
+  | Let_e (x, K, K) ->
+    cont heap k env
+  | Let_e (x, K, e2) ->
+    let e = List.hd heap in
+    let heap = List.tl heap in
+    let newenv=(bind x e env) in
+    (eval_with_k heap (Let_e (x, K, K) :: k) e2 env)
+  | Let_e (x, e1, e2) ->
+    (eval_with_k heap (Let_e (x, K, e2) :: k) e1 env)
+
   | Letrec_e (x, e1, e2) ->  let newenv = (bind x (Undef) env) in
                              update x (eval ast e1 newenv) newenv; (eval ast e2 newenv)
   | If_e (b, e1, e2) ->
