@@ -27,6 +27,7 @@ let print_value (v : value) : unit =
 let read_console () : string =
   let rec read_lines s =
     let input = read_line() in
+    let input = String.trim input in
     if input = "" then s
     else read_lines (s ^ input ^ "\n") in
   read_lines ""
