@@ -51,3 +51,10 @@ let rec value_to_string (x : value) : string =
     | Nil -> "()"
     | Cons  _ -> listify (cons_to_string x)
     | Undef -> failwith "Oppan"
+
+let value_list_to_string vl =
+  let rec step = function
+    | [] -> ""
+    | v :: l -> value_to_string v ^ "; " ^ step l
+  in
+  "[" ^ step vl ^ "]"

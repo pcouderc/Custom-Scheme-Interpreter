@@ -175,6 +175,7 @@ and to_continuation first env ast =
 (** Somes tests to represent and evaluate using continuation *)
 
 and cont heap k env =
+  (* Format.printf "%s@." @@ value_list_to_string heap; *)
   match k with
   | [] -> List.hd heap
   | ast :: k -> eval_with_k heap k ast env
@@ -211,7 +212,7 @@ and eval_with_k heap k ast env =
     let e = List.hd heap in
     let heap = List.tl heap in
     let newenv=(bind x e env) in
-    (eval_with_k heap (Let_e (x, K, K) :: k) e2 env)
+    (eval_with_k heap (Let_e (x, K, K) :: k) e2 newenv)
   | Let_e (x, e1, e2) ->
     (eval_with_k heap (Let_e (x, K, e2) :: k) e1 env)
 
@@ -253,3 +254,6 @@ and eval_with_k heap k ast env =
     | _ -> runtime "argument type must be  ('a -> 'b) "
     end
   (* | _ -> runtime "No implemented yet" *)
+
+let eval _ e env =
+  eval_with_k [] [] e env

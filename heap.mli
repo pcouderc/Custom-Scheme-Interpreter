@@ -21,3 +21,5 @@ val update : Ast.id -> value -> env -> unit
 val bind : Ast.id -> value -> env -> env
 
 val value_to_string : value -> string
+
+val value_list_to_string : value list -> string
