@@ -280,10 +280,25 @@ and eval_with_k heap k ast env =
       | Closure(a,b) -> eval_with_k heap k a b
       | _ -> res)
 
-  | Quote_e expr -> begin match expr with | Int_e _ | Str_e _ | Bool_e _ |
-      Nil_e -> eval ast expr env | _ -> Ast expr end
+  | Quote_e K ->
+    cont heap k env
+  | Quote_e expr ->
+    begin
+      match expr with
+      | Int_e _ | Str_e _ | Bool_e _ |  Nil_e ->
+        eval_with_k heap (Quote_e K :: k) expr env
+      | _ -> cont (Ast expr :: heap) k env
+    end
+
+  | Eval_e K ->
+    begin
+      match List.hd heap with
+        Ast e -> eval_with_k heap k e env
+      | e -> cont heap k env
+    end
   | Eval_e expr ->
-    begin match eval ast expr env with Ast e -> eval ast e env | e -> e end
+    eval_with_k heap (Eval_e K :: k) expr env
+
   | Callcc_e expr ->
     begin match eval ast expr env with
       Closure (Fun_e ([k], e), env) -> assert false
