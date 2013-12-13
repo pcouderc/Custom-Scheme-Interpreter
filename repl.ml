@@ -25,10 +25,10 @@ let print_value (v : value) : unit =
 (* read lines from the console, appending them to s,
  * until the user enters a blank line (load*)
 let read_console () : string =
-  let rec read_lines (s : string) : string =
+  let rec read_lines s =
     let input = read_line() in
-      if input = "" then s
-      else read_lines (s ^ input ^ "\n") in
+    if input = "" then s
+    else read_lines (s ^ input ^ "\n") in
   read_lines ""
 
 (* read from a file *)
