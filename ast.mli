@@ -41,6 +41,7 @@ type expr =
   | Forced_e of expr
   | Callcc_e of expr
   | K
+  | Cont_e of id
   | Eval_e of expr
   | Quote_e of expr
 

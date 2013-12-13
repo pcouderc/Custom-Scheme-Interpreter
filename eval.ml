@@ -171,6 +171,7 @@ and to_continuation first env ast =
   | Eval_e expr -> [Fun_e (["x"], Eval_e (Id_e "x"))]
   | Callcc_e expr -> [Fun_e (["x"], Callcc_e (Id_e "x"))]
   | K -> assert false
+  | Cont_e _ -> assert false
 
 (** Somes tests to represent and evaluate using continuation *)
 
@@ -299,11 +300,19 @@ and eval_with_k heap k ast env =
   | Eval_e expr ->
     eval_with_k heap (Eval_e K :: k) expr env
 
-  | Callcc_e expr ->
-    begin match eval ast expr env with
-      Closure (Fun_e ([k], e), env) -> assert false
+  | Callcc_e K ->
+    let expr = List.hd heap in
+    let heap = List.tl heap in
+    begin match expr with
+      Closure (Fun_e ([i], e) as f, c_env) ->
+        let env = bind i (Cont (heap, k, env)) env in
+        eval_with_k heap k (Apply_e (f, [Cont_e i])) env
     | _ -> runtime "argument type must be  ('a -> 'b) "
     end
+  | Callcc_e expr ->
+    eval_with_k heap (Callcc_e K :: k) expr env
+
+  | Cont_e i -> assert false
   (* | _ -> runtime "No implemented yet" *)
 
 and apply_with_k heap k (f : value) (v : value) : value =

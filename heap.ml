@@ -7,6 +7,7 @@ type value =
   | Ast of expr
   | Bool of bool
   | Closure of expr * env
+  | Cont of value list * expr list * env
   | Cons of value * value
   | Nil
   | Undef
@@ -48,6 +49,7 @@ let rec value_to_string (x : value) : string =
     | Ast expr -> "'" ^ Ast.to_string expr
     | Bool b -> string_of_bool b
     | Closure (a,b) -> "<fun>"
+    | Cont (_,_,_) -> "<k>"
     | Nil -> "()"
     | Cons  _ -> listify (cons_to_string x)
     | Undef -> failwith "Oppan"

@@ -63,6 +63,7 @@ type expr =
   | Callcc_e of expr
   | K (* takes an already evaluated argument that waits this expr as its
          continuation *)
+  | Cont_e of id (* id of the reified continuation binded in the environnement *)
   | Eval_e of expr
   | Quote_e of expr
 
@@ -118,3 +119,4 @@ let rec to_string (e : expr) : string =
     | Eval_e ex -> "eval " ^ (to_string ex)
     | Quote_e ex -> "'" ^ (to_string ex)
     | K -> "k"
+    | Cont_e _ -> "<cont>"

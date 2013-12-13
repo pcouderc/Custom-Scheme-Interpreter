@@ -4,6 +4,7 @@ type value =
   | Ast of Ast.expr
   | Bool of bool
   | Closure of Ast.expr * env
+  | Cont of value list * Ast.expr list * env
   | Cons of value * value
   | Nil
   | Undef
