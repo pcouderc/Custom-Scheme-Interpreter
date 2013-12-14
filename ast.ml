@@ -131,5 +131,5 @@ let ast_list_to_string al =
   let rec step al acc =
     match al with
     | [] -> acc
-    | a :: l -> step l @@ acc ^ to_string a in
+    | a :: l -> step l @@ acc ^ "; " ^ to_string a in
   "[" ^ (step al "") ^ "]"

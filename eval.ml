@@ -2,6 +2,10 @@ open Ast
 open Heap
 open Util
 
+type result =
+| R_value of value
+| R_cont of value
+
 let rec eval k (ast : expr) (env : env) : value =
   match ast with
   | Int_e n -> Int n
@@ -177,15 +181,18 @@ and to_continuation first env ast =
 (** Somes tests to represent and evaluate using continuation *)
 
 and cont stack k env =
-  (* Format.printf "stack:%s@.cont:%s@." *)
+  (* Format.printf "cont: @.stack:%s@.cont:%s@.-----------@." *)
   (*   (value_list_to_string stack) *)
   (*   (ast_list_to_string k); *)
   match k with
-  | [] -> List.hd stack
+  | [] | K :: _ -> List.hd stack
   | ast :: k -> eval_with_k stack k ast env
 
 and eval_with_k stack k ast env =
-  (* Format.printf "%s@." @@ to_string ast; *)
+  (* Format.printf "eval: %s@.stack:%s@.cont:%s@.-------@." *)
+  (*   (to_string ast) *)
+  (*   (value_list_to_string stack) *)
+  (*   (ast_list_to_string k); *)
   match ast with
   | K -> runtime "K shouldn't be evaluated"
   | Int_e n -> cont ((Int n) :: stack) k env
@@ -249,19 +256,24 @@ and eval_with_k stack k ast env =
 
   | Apply_e (K, [K]) -> assert false
   | Apply_e (K, es) ->
-    let foo acc ele = apply_with_k stack k acc (eval_with_k stack k ele env) in
+    (* Format.printf "In Apply_e (K, es) case@."; *)
     let f = List.hd stack in
     let stack = List.tl stack in
+    let foo acc ele = apply_with_k stack k acc
+      (eval_with_k stack (K :: k) ele env) in
+    (* let k = if is_cont f then K :: k else k in *)
     (* Format.printf "fun: %s, stack: %s@." *)
     (*   (value_to_string f) (value_list_to_string stack); *)
     let res = List.fold_left foo f es in
-    if is_cont f then res else
+    (* Format.printf "res: %s@." (value_to_string res); *)
     (match res with
     | Closure(Fun_e(xs,e),env) ->
       (match xs with
       | [] -> eval_with_k stack k e env
       | _ -> res)
-    (* | Cont (_stack, k, env) -> cont stack k env *)
+    | Cont (stack, k, env) ->
+      (* Format.printf "In cont case@;";  *)
+      cont stack k env
     | _ -> runtime "No closure match 2")
   | Apply_e (e1, es) ->
     eval_with_k stack (Apply_e (K, es) :: k) e1 env
@@ -324,7 +336,7 @@ and eval_with_k stack k ast env =
     let stack = List.tl stack in
     (* Format.printf "Callcc_e K: %s@." @@ value_to_string expr; *)
     begin match expr with
-      Closure (Fun_e (i :: _, e) as f, c_env) ->
+      Closure (Fun_e ([i], e) as f, c_env) ->
         let env = bind i (Cont (stack, k, env)) env in
         eval_with_k stack k (Apply_e (f, [Cont_e i])) env
     | _ -> runtime "argument must be of type ('a -> 'b) "
@@ -337,19 +349,23 @@ and eval_with_k stack k ast env =
     let res = match lookup i env with
       | None -> Nil
       | Some e -> e in
-    cont (res :: stack) k env
+    cont (res :: stack) (K :: k) env
   (* | _ -> runtime "No implemented yet" *)
 
 and apply_with_k stack k (f : value) (v : value) : value =
-  (* Format.printf "apply: %s : %s@." (value_to_string f) (value_to_string v); *)
+  (* Format.printf "apply: %s : %s@.stack:%s@.cont:%s@.-----------@." *)
+  (*   (value_to_string f) (value_to_string v) *)
+  (*   (value_list_to_string stack) *)
+  (*   (ast_list_to_string k); *)
  (match f with
    | Closure(Fun_e(xs,e),env) -> (match xs with
        | [] -> eval_with_k stack k e env
        | idhd::idtl ->
-         let newenv = bind idhd v env in Closure(Fun_e(idtl,e),newenv) )
+         let newenv = bind idhd v env in
+         Closure(Fun_e(idtl,e),newenv))
    | Cont (stack, k, env) ->
      (* Format.printf *)
-     cont (v :: stack) k env
+     Cont ((v :: stack),k,env)
    | _ -> runtime "No closure match")
 
 

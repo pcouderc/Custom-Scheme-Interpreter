@@ -37,12 +37,10 @@ To do that, we add a new value construct : Cont of value list * expr list * env
 It represents a continuation, with its associated stack (the first paramater);
 its k-stack (the second) and the environment at the reified state.
 
-This next paragraph is wrong, since actually we don't need Cont_e as it behave
-exactly as Id_e. It should change soon.
-(* We also add a new construct to our AST : Cont_e of id, which allows then to find
+We also add a new construct to our AST : Cont_e of id, which allows then to find
 the reified continuation in the environment. Actually, it is a trick to avoid
 the AST type to be dependent of the value type, which is already dependent of
-AST. *)
+AST.
 
 When we call callcc, we create a Cont with the actual stack, the k-stack and the
 envrionment. We then bind it to the same id as the parameter of the function we
@@ -58,19 +56,21 @@ k-stack, namely (Callcc_e K).
 function, we throw a runtime exception. If it is a function (and in our case, it
 is), we bind in the environment a Cont with the actual stack, the k-stack and
 the environment to the id of the first argument of the function, and we call and
-evaluation with : Apply_e (f, [Id_e i]), which symbolizes the application of a
+evaluation with : Apply_e (f, [Cont_e i]), which symbolizes the application of a
 function to a list of argument.
 - We evaluation Apply_e, do our evaluation of f, push it on the stack, etc. We
 arrive then at the point were we have to evaluate (f 2)
-- It then look like a Apply (Id_e i, [Int_e 2]). We evaluate Id_e i, which pushes
+- It then look like a Apply (Cont_e i, [Int_e 2]). We evaluate Cont_e i, which pushes
 the Cont on the stack and push Apply (K, Int_e 2) on the k-stack, then call
-cont, etc. 
+cont, etc. Cont_e, when evaluated, will push the value from the environment on
+the stack, and K on the k-stack, meaning that, when cont is called, return the
+first value on the stack.
 - We now evaluate Apply (K, Int_e 2). We evaluate (Int_e 2) to Int 2 (with all
 the intermediary operations) and then pop the stack, giving us the 
 Cont (stack, k, env). We then call apply, that will apply a value to a value
 that can be a function, or a continuation. Since we have a continuation, we will
 call cont, using the saved stack, k-stack and env, and push the argument given
-to the apllycation on the stack.
+to the application on the stack.
 
 This will then return 2. 
 
