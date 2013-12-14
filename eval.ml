@@ -324,10 +324,10 @@ and eval_with_k stack k ast env =
     let stack = List.tl stack in
     (* Format.printf "Callcc_e K: %s@." @@ value_to_string expr; *)
     begin match expr with
-      Closure (Fun_e ([i], e) as f, c_env) ->
+      Closure (Fun_e (i :: _, e) as f, c_env) ->
         let env = bind i (Cont (stack, k, env)) env in
         eval_with_k stack k (Apply_e (f, [Cont_e i])) env
-    | _ -> runtime "argument type must be  ('a -> 'b) "
+    | _ -> runtime "argument must be of type ('a -> 'b) "
     end
   | Callcc_e expr ->
     (* Format.printf "Callcc_e %s@." @@ to_string expr; *)
