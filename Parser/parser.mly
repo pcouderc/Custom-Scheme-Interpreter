@@ -2,7 +2,7 @@
   open Ast
 %}
 
-%token DEFINE DEFINEREC LAMBDA LET LETREC IF
+%token DEFINE DEFINEREC LAMBDA LET LETREC IF BEGIN
 %token LPAREN RPAREN
 %token DELAY FORCE CALLCC EVAL
 %token DOT QUOTE
@@ -50,6 +50,7 @@ expr :
  | TRUE      { Bool_e true }
  | FALSE     { Bool_e false }
  | QUOTE expr { Quote_e $2 }
+ | LPAREN BEGIN seq RPAREN { Begin_e $3 }
  | LPAREN QUOTE expr RPAREN           { Quote_e $3 }
  | LPAREN DELAY expr RPAREN           { Delayed_e $3 }
  | LPAREN FORCE expr RPAREN           { Forced_e $3 }

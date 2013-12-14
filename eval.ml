@@ -172,6 +172,7 @@ and to_continuation first env ast =
   | Callcc_e expr -> [Fun_e (["x"], Callcc_e (Id_e "x"))]
   | K -> assert false
   | Cont_e _ -> assert false
+  | _ -> runtime "Not implemented yet"
 
 (** Somes tests to represent and evaluate using continuation *)
 
@@ -199,6 +200,17 @@ and eval_with_k stack k ast env =
       | None -> cont (Nil :: stack) k env
       | Some v -> cont (v :: stack) k env
     end
+
+  | Begin_e [] ->
+    cont stack k env
+  | Begin_e [K] ->
+    cont stack k env
+  | Begin_e (K :: l) ->
+    let e = List.hd l in
+    let l = List.tl l in
+    eval_with_k (List.tl stack) ((Begin_e l) :: k) e env
+  | Begin_e (e :: l) ->
+    eval_with_k stack ((Begin_e (K :: l)) :: k) e env
 
   | Cons_e (K, K) ->
     let y = List.hd stack in

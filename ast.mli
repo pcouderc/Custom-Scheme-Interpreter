@@ -27,6 +27,7 @@ type expr =
   | Bool_e of bool
   | Id_e of id
   | Nil_e
+  | Begin_e of expr list
   | Cons_e of expr * expr
   | Let_e of id * expr * expr
   | Letrec_e of id * expr * expr

@@ -48,6 +48,7 @@ type expr =
   | Bool_e of bool
   | Id_e of id
   | Nil_e
+  | Begin_e of expr list
   | Cons_e of expr * expr
   | Let_e of id * expr * expr
   | Letrec_e of id * expr * expr
@@ -80,6 +81,11 @@ let rec to_string (e : expr) : string =
     | Bool_e b -> string_of_bool b
     | Id_e x -> x
     | Nil_e -> "()"
+    | Begin_e el ->
+      (List.fold_left
+         (fun acc e ->
+           Format.sprintf "%s; %s" acc @@ to_string e)
+         "begin [" el) ^ "]"
     | Cons_e _ -> listify (cons_to_string e)
     | Let_e (x, e1, e2) ->
         let s1 = to_string e1

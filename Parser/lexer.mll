@@ -8,6 +8,7 @@ let keywords =
      "let", LET;
      "if", IF;
      "define", DEFINE;
+     "begin", BEGIN;
      "list", LIST;
      "cons", CONS;
      "car", CAR;
