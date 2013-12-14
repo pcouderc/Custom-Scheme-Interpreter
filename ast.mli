@@ -47,3 +47,4 @@ type expr =
 
 
 val to_string : expr -> id
+val ast_list_to_string : expr list -> string

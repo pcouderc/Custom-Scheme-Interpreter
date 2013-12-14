@@ -14,6 +14,9 @@ type value =
 and binding = id * value ref
 and env = binding list
 
+let is_cont = function
+  | Cont (_,_,_) -> true
+  | _ -> false
 
 (* lookup a value in the environment *)
 let lookup (x : id) (env : env) : value option =

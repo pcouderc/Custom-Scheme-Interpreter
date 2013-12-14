@@ -120,3 +120,10 @@ let rec to_string (e : expr) : string =
     | Quote_e ex -> "'" ^ (to_string ex)
     | K -> "k"
     | Cont_e _ -> "<cont>"
+
+let ast_list_to_string al =
+  let rec step al acc =
+    match al with
+    | [] -> acc
+    | a :: l -> step l @@ acc ^ to_string a in
+  "[" ^ (step al "") ^ "]"

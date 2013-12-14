@@ -175,77 +175,84 @@ and to_continuation first env ast =
 
 (** Somes tests to represent and evaluate using continuation *)
 
-and cont heap k env =
-  (* Format.printf "%s@." @@ value_list_to_string heap; *)
+and cont stack k env =
+  (* Format.printf "stack:%s@.cont:%s@." *)
+  (*   (value_list_to_string stack) *)
+  (*   (ast_list_to_string k); *)
   match k with
-  | [] -> List.hd heap
-  | ast :: k -> eval_with_k heap k ast env
+  | [] -> List.hd stack
+  | ast :: k -> eval_with_k stack k ast env
 
-and eval_with_k heap k ast env =
+and eval_with_k stack k ast env =
+  (* Format.printf "%s@." @@ to_string ast; *)
   match ast with
   | K -> runtime "K shouldn't be evaluated"
-  | Int_e n -> cont ((Int n) :: heap) k env
-  | Str_e s -> cont ((Str s) :: heap) k env
-  | Bool_e b -> cont ((Bool b) :: heap) k env
+  | Int_e n -> cont ((Int n) :: stack) k env
+  | Str_e s -> cont ((Str s) :: stack) k env
+  | Bool_e b -> cont ((Bool b) :: stack) k env
   | Def_e _ -> runtime "define may occur at top level only"
   | Defrec_e _ -> runtime "definerec may occur at top level only"
-  | Nil_e -> cont (Nil :: heap) k env
+  | Nil_e -> cont (Nil :: stack) k env
   | Id_e id ->
     begin
       match (lookup id env) with
-      | None -> cont (Nil :: heap) k env
-      | Some v -> cont (v :: heap) k env
+      | None -> cont (Nil :: stack) k env
+      | Some v -> cont (v :: stack) k env
     end
 
   | Cons_e (K, K) ->
-    let y = List.hd heap in
-    let x = List.hd @@ List.tl heap in
-    let heap = List.tl @@ List.tl heap in
-    cont (Cons (x, y) :: heap) k env
+    let y = List.hd stack in
+    let x = List.hd @@ List.tl stack in
+    let stack = List.tl @@ List.tl stack in
+    cont (Cons (x, y) :: stack) k env
   | Cons_e (K, y) ->
-    eval_with_k heap (Cons_e (K, K) :: k) y env
+    eval_with_k stack (Cons_e (K, K) :: k) y env
   | Cons_e (x, y) ->
-    eval_with_k heap (Cons_e (K, y) :: k) x env
+    eval_with_k stack (Cons_e (K, y) :: k) x env
 
   | Let_e (x, K, K) ->
-    cont heap k env
+    cont stack k env
   | Let_e (x, K, e2) ->
-    let e = List.hd heap in
-    let heap = List.tl heap in
+    let e = List.hd stack in
+    let stack = List.tl stack in
     let newenv=(bind x e env) in
-    eval_with_k heap (Let_e (x, K, K) :: k) e2 newenv
+    eval_with_k stack (Let_e (x, K, K) :: k) e2 newenv
   | Let_e (x, e1, e2) ->
-    eval_with_k heap (Let_e (x, K, e2) :: k) e1 env
+    eval_with_k stack (Let_e (x, K, e2) :: k) e1 env
 
   | If_e (K, e1, e2) ->
-    let b = List.hd heap in
-    let heap = List.tl heap in
+    let b = List.hd stack in
+    let stack = List.tl stack in
     begin
       match b with
       | Bool bee ->
         if bee then
-          eval_with_k heap k e1 env
+          eval_with_k stack k e1 env
         else
-          eval_with_k heap k e2 env
+          eval_with_k stack k e2 env
       | _ -> runtime "No bool case matched for if"
     end
   | If_e (b, e1, e2) ->
-    eval_with_k heap (If_e (K, e1, e2) :: k) b env
+    eval_with_k stack (If_e (K, e1, e2) :: k) b env
 
   | Apply_e (K, [K]) -> assert false
   | Apply_e (K, es) ->
-    let foo acc ele = apply_with_k heap k acc (eval_with_k heap k ele env) in
-    let f = List.hd heap in
-    let heap = List.tl heap in
+    let foo acc ele = apply_with_k stack k acc (eval_with_k stack k ele env) in
+    let f = List.hd stack in
+    let stack = List.tl stack in
+    (* Format.printf "fun: %s, stack: %s@." *)
+    (*   (value_to_string f) (value_list_to_string stack); *)
     let res = List.fold_left foo f es in
+    if is_cont f then res else
     (match res with
     | Closure(Fun_e(xs,e),env) ->
       (match xs with
-      | [] -> eval_with_k heap k e env
+      | [] -> eval_with_k stack k e env
       | _ -> res)
+    (* | Cont (_stack, k, env) -> cont stack k env *)
     | _ -> runtime "No closure match 2")
   | Apply_e (e1, es) ->
-    eval_with_k heap (Apply_e (K, es) :: k) e1 env
+    eval_with_k stack (Apply_e (K, es) :: k) e1 env
 
   | Letrec_e (x, e1, e2) ->
     Format.printf "Not evaluated with continuation yet@.";
@@ -253,74 +260,84 @@ and eval_with_k heap k ast env =
     update x (eval ast e1 newenv) newenv; (eval ast e2 newenv)
 
   | Fun_e (xs, e) ->
-    Closure (Fun_e(xs,e),env)
+    cont (Closure (Fun_e(xs,e),env) :: stack) k env
 
   | Binop_e (op, K, K) ->
-    let y = List.hd heap in
-    let x = List.hd @@ List.tl heap in
-    let heap = List.tl @@ List.tl heap in
+    let y = List.hd stack in
+    let x = List.hd @@ List.tl stack in
+    let stack = List.tl @@ List.tl stack in
     let res = apply_binop op x y in
-    cont (res :: heap) k env
+    cont (res :: stack) k env
   | Binop_e (op, K, y) ->
-    eval_with_k heap (Binop_e (op, K, K) :: k) y env
+    eval_with_k stack (Binop_e (op, K, K) :: k) y env
   | Binop_e (op, x, y) ->
-    eval_with_k heap (Binop_e (op, K, y) :: k) x env
+    eval_with_k stack (Binop_e (op, K, y) :: k) x env
 
   | Unop_e (op, K) ->
-    let x = List.hd heap in
-    let heap = List.tl heap in
+    let x = List.hd stack in
+    let stack = List.tl stack in
     let res = apply_unop op x in
-    cont (res :: heap) k env
+    cont (res :: stack) k env
   | Unop_e (op, e) ->
-    eval_with_k heap (Unop_e (op, K) ::k) e env
+    eval_with_k stack (Unop_e (op, K) ::k) e env
 
   | Delayed_e (ex) -> Closure (ex,env)
   | Forced_e (del_expr) ->
-    let res = (eval_with_k heap k del_expr env) in
+    let res = (eval_with_k stack k del_expr env) in
     (match res with
-      | Closure(a,b) -> eval_with_k heap k a b
+      | Closure(a,b) -> eval_with_k stack k a b
       | _ -> res)
 
   | Quote_e K ->
-    cont heap k env
+    cont stack k env
   | Quote_e expr ->
     begin
       match expr with
       | Int_e _ | Str_e _ | Bool_e _ |  Nil_e ->
-        eval_with_k heap (Quote_e K :: k) expr env
-      | _ -> cont (Ast expr :: heap) k env
+        eval_with_k stack (Quote_e K :: k) expr env
+      | _ -> cont (Ast expr :: stack) k env
     end
 
   | Eval_e K ->
     begin
-      match List.hd heap with
-        Ast e -> eval_with_k heap k e env
-      | e -> cont heap k env
+      match List.hd stack with
+        Ast e -> eval_with_k stack k e env
+      | e -> cont stack k env
     end
   | Eval_e expr ->
-    eval_with_k heap (Eval_e K :: k) expr env
+    eval_with_k stack (Eval_e K :: k) expr env
 
   | Callcc_e K ->
-    let expr = List.hd heap in
-    let heap = List.tl heap in
+    let expr = List.hd stack in
+    let stack = List.tl stack in
+    (* Format.printf "Callcc_e K: %s@." @@ value_to_string expr; *)
     begin match expr with
       Closure (Fun_e ([i], e) as f, c_env) ->
-        let env = bind i (Cont (heap, k, env)) env in
-        eval_with_k heap k (Apply_e (f, [Cont_e i])) env
+        let env = bind i (Cont (stack, k, env)) env in
+        eval_with_k stack k (Apply_e (f, [Cont_e i])) env
     | _ -> runtime "argument type must be  ('a -> 'b) "
     end
   | Callcc_e expr ->
-    eval_with_k heap (Callcc_e K :: k) expr env
+    (* Format.printf "Callcc_e %s@." @@ to_string expr; *)
+    eval_with_k stack (Callcc_e K :: k) expr env
 
-  | Cont_e i -> assert false
+  | Cont_e i ->
+    let res = match lookup i env with
+      | None -> Nil
+      | Some e -> e in
+    cont (res :: stack) k env
   (* | _ -> runtime "No implemented yet" *)
 
-and apply_with_k heap k (f : value) (v : value) : value =
+and apply_with_k stack k (f : value) (v : value) : value =
+  (* Format.printf "apply: %s : %s@." (value_to_string f) (value_to_string v); *)
  (match f with
    | Closure(Fun_e(xs,e),env) -> (match xs with
-       | [] -> eval_with_k heap k e env
+       | [] -> eval_with_k stack k e env
        | idhd::idtl ->
          let newenv = bind idhd v env in Closure(Fun_e(idtl,e),newenv) )
+   | Cont (stack, k, env) ->
+     (* Format.printf *)
+     cont (v :: stack) k env
    | _ -> runtime "No closure match")
 
 
