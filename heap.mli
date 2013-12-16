@@ -11,6 +11,8 @@ type value =
 and binding = Ast.id * value ref
 and env = binding list
 
+val global_env : env ref
+
 val is_cont : value -> bool
 
 (* Looks up a value in the environment. None if not found. *)

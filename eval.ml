@@ -2,10 +2,6 @@ open Ast
 open Heap
 open Util
 
-type result =
-| R_value of value
-| R_cont of value
-
 let rec eval k (ast : expr) (env : env) : value =
   match ast with
   | Int_e n -> Int n
@@ -205,10 +201,13 @@ and eval_with_k stack k ast env =
   | Id_e id ->
     begin
       match (lookup id env) with
-      | None -> cont (Nil :: stack) k env
+      | None ->
+        begin match (lookup id !global_env) with
+        | None -> cont (Nil :: stack) k env
+        | Some v -> cont (v :: stack) k env
+        end
       | Some v -> cont (v :: stack) k env
     end
-
   | Begin_e [] ->
     cont stack k env
   | Begin_e [K] ->
@@ -322,7 +321,6 @@ and eval_with_k stack k ast env =
         eval_with_k stack (Quote_e K :: k) expr env
       | _ -> cont (Ast expr :: stack) k env
     end
-
   | Eval_e K ->
     begin
       match List.hd stack with
@@ -345,13 +343,18 @@ and eval_with_k stack k ast env =
   | Callcc_e expr ->
     (* Format.printf "Callcc_e %s@." @@ to_string expr; *)
     eval_with_k stack (Callcc_e K :: k) expr env
-  | Set_e (ex1, K) -> assert false
-  | Set_e (ex1, ex2) ->
+  | Set_e (ex1, K) ->
     let id = begin match ex1 with Id_e i -> i
       | _ -> runtime "first argument must be a ident" end in
-    assert false
-
-
+    let expr = List.hd stack in
+    let stack = List.tl stack in
+    begin try (List.assoc id env) := expr
+      with Not_found ->
+        begin try (List.assoc id !global_env) := expr with Not_found ->
+          runtime ("undefined variable " ^ id) end end;
+    cont (Nil::stack) k env
+  | Set_e (ex1, ex2) ->
+    eval_with_k stack (Set_e (ex1, K) :: k) ex2 env
   | Cont_e i ->
     let res = match lookup i env with
       | None -> Nil
