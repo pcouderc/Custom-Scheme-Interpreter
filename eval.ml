@@ -178,18 +178,18 @@ and to_continuation first env ast =
 (** Somes tests to represent and evaluate using continuation *)
 
 and cont stack k env =
-  (* Format.printf "cont: @.stack:%s@.cont:%s@.-----------@." *)
-  (*   (value_list_to_string stack) *)
-  (*   (ast_list_to_string k); *)
+  Format.printf "cont: @.stack:%s@.cont:%s@.-----------@."
+    (value_list_to_string stack)
+    (ast_list_to_string k);
   match k with
   | [] | K :: _ -> List.hd stack
   | ast :: k -> eval_with_k stack k ast env
 
 and eval_with_k stack k ast env =
-  (* Format.printf "eval: %s@.stack:%s@.cont:%s@.-------@." *)
-  (*   (to_string ast) *)
-  (*   (value_list_to_string stack) *)
-  (*   (ast_list_to_string k); *)
+  Format.printf "eval: %s@.stack:%s@.cont:%s@.-------@."
+    (to_string ast)
+    (value_list_to_string stack)
+    (ast_list_to_string k);
   match ast with
   | K -> runtime "K shouldn't be evaluated"
   | Int_e n -> cont ((Int n) :: stack) k env
@@ -324,8 +324,9 @@ and eval_with_k stack k ast env =
   | Eval_e K ->
     begin
       match List.hd stack with
-        Ast e -> eval_with_k stack k e env
-      | e -> cont stack k env
+        Ast e -> Format.printf "is_ast@.";
+          eval_with_k stack k e env
+      | e -> Format.printf "is_not_ast@."; cont (e :: stack) k env
     end
   | Eval_e expr ->
     eval_with_k stack (Eval_e K :: k) expr env
@@ -363,10 +364,10 @@ and eval_with_k stack k ast env =
   (* | _ -> runtime "No implemented yet" *)
 
 and apply_with_k stack k (f : value) (v : value) : value =
-  (* Format.printf "apply: %s : %s@.stack:%s@.cont:%s@.-----------@." *)
-  (*   (value_to_string f) (value_to_string v) *)
-  (*   (value_list_to_string stack) *)
-  (*   (ast_list_to_string k); *)
+  Format.printf "apply: %s : %s@.stack:%s@.cont:%s@.-----------@."
+    (value_to_string f) (value_to_string v)
+    (value_list_to_string stack)
+    (ast_list_to_string k);
  (match f with
    | Closure(Fun_e(xs,e),env) -> (match xs with
        | [] -> eval_with_k stack k e env

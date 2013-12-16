@@ -51,7 +51,7 @@ let rec value_to_string (x : value) : string =
     | Str s -> s
     | Ast expr -> "'" ^ Ast.to_string expr
     | Bool b -> string_of_bool b
-    | Closure (a,b) -> "<fun>"
+    | Closure (a,b) -> "<fun>: " ^ Ast.to_string a
     | Cont (_,_,_) -> "<k>"
     | Nil -> "()"
     | Cons  _ -> listify (cons_to_string x)
@@ -92,7 +92,7 @@ let global_env = ref
                  (Fun_e (["a"; "b"], Binop_e (Or, Id_e "a", Id_e "b")), []));
     "call-with-current-continuation", ref (Closure
                  (Fun_e (["a"], Callcc_e (Id_e "a")), []));
-    "eval", ref (Closure (Fun_e (["a"], Eval_e (Id_e "a")), []));
+    "evalp", ref (Closure (Fun_e (["a"], Eval_e (Id_e "a")), []));
     "~", ref (Closure (Fun_e (["a"], Unop_e (Not, Id_e "a")), []));
     "car", ref (Closure (Fun_e (["a"], Unop_e (Car, Id_e "a")), []));
     "cdr", ref (Closure (Fun_e (["a"], Unop_e (Cdr, Id_e "a")), []));

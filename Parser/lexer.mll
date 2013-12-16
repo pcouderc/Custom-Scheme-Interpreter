@@ -14,7 +14,8 @@ let keywords =
      "cons", CONS;
      "letrec", LETREC;
      "definerec", DEFINEREC;
-     "quote", QUOTE
+     "quote", QUOTE;
+     "eval", EVAL;
     ]
 
 

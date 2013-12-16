@@ -80,7 +80,7 @@ let rec to_string (e : expr) : string =
     | Int_e n -> string_of_int n
     | Str_e s -> s
     | Bool_e b -> string_of_bool b
-    | Id_e x -> x
+    | Id_e x -> "Id_e " ^ x
     | Nil_e -> "()"
     | Begin_e el ->
       (List.fold_left
