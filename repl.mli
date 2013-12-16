@@ -4,4 +4,4 @@ val read_console : unit -> string
 val read_file : string -> string
 val eval_one : Heap.env -> Ast.expr -> Heap.env
 val eval_list : Heap.env -> Ast.expr list -> Heap.env
-val repl : Heap.env -> unit
+val repl : Heap.env -> Heap.env ref -> unit

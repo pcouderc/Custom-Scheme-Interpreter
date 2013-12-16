@@ -52,20 +52,12 @@ expr :
  | QUOTE expr { Quote_e $2 }
  | LPAREN BEGIN seq RPAREN { Begin_e $3 }
  | LPAREN QUOTE expr RPAREN           { Quote_e $3 }
- | LPAREN DELAY expr RPAREN           { Delayed_e $3 }
- | LPAREN FORCE expr RPAREN           { Forced_e $3 }
- | LPAREN CALLCC expr RPAREN          { Callcc_e $3 }
- | LPAREN EVAL expr RPAREN            { Eval_e $3 }
  | LPAREN LAMBDA idseq expr RPAREN    { Fun_e ($3, $4) }
  | LPAREN DEFINE idseq expr RPAREN    { Def_e ($3, $4) }
  | LPAREN DEFINEREC idseq expr RPAREN { Defrec_e ($3, $4) }
  | LPAREN LET ID expr expr RPAREN     { Let_e ($3, $4, $5) }
  | LPAREN LETREC ID expr expr RPAREN  { Letrec_e ($3, $4, $5) }
  | LPAREN IF expr expr expr RPAREN    { If_e ($3, $4, $5) }
- | LPAREN binop expr expr RPAREN      { Binop_e ($2, $3, $4) }
- | LPAREN unop expr RPAREN            { Unop_e ($2, $3) }
- | LPAREN MINUS expr expr RPAREN      { Binop_e (Minus, $3, $4) }
- | LPAREN MINUS expr RPAREN           { Unop_e (Minus, $3) }
  | LPAREN expr seq RPAREN             { Apply_e ($2, $3) }
  | LPAREN LIST seq RPAREN
      { List.fold_right (fun x a -> Cons_e (x, a)) $3 Nil_e }
@@ -73,27 +65,4 @@ expr :
  | LPAREN RPAREN                      { Nil_e }
  | NIL                                { Nil_e }
  | LPAREN CONS expr expr RPAREN       { Cons_e ($3, $4) }
-;
-
-binop :
-   PLUS       { Plus }
- | MUL        { Mul }
- | DIV        { Div }
- | MOD        { Mod }
- | EQ         { Eq}
- | NEQ        { Neq }
- | LT         { Lt }
- | LEQ        { Leq }
- | GT         { Gt }
- | GEQ        { Geq }
- | AND        { And }
- | OR         { Or }
-;
-
-unop :
-   NOT         { Not }
- | CAR         { Car }
- | CDR         { Cdr }
- | NULL        { Null }
- | LOAD        { Load }
 ;

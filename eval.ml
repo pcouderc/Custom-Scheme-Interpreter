@@ -21,8 +21,9 @@ let rec eval k (ast : expr) (env : env) : value =
   | Cons_e (x, y) -> Cons ((eval ast x env),(eval ast y env))
   | Let_e (x, e1, e2) -> let newenv=(bind x (eval ast e1 env) env) in
                          (eval ast e2 newenv)
-  | Letrec_e (x, e1, e2) ->  let newenv = (bind x (Undef) env) in
-                             update x (eval ast e1 newenv) newenv; (eval ast e2 newenv)
+  | Letrec_e (x, e1, e2) ->
+    let newenv = (bind x (Undef) env) in
+    update x (eval ast e1 newenv) newenv; (eval ast e2 newenv)
   | If_e (b, e1, e2) ->
     (match (eval ast b env) with
     | Bool bee -> if (bee) then (eval ast e1 env) else (eval ast e2 env)
@@ -344,6 +345,12 @@ and eval_with_k stack k ast env =
   | Callcc_e expr ->
     (* Format.printf "Callcc_e %s@." @@ to_string expr; *)
     eval_with_k stack (Callcc_e K :: k) expr env
+  | Set_e (ex1, K) -> assert false
+  | Set_e (ex1, ex2) ->
+    let id = begin match ex1 with Id_e i -> i
+      | _ -> runtime "first argument must be a ident" end in
+    assert false
+
 
   | Cont_e i ->
     let res = match lookup i env with

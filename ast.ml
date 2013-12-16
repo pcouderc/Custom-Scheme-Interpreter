@@ -62,6 +62,7 @@ type expr =
   | Delayed_e of expr
   | Forced_e of expr
   | Callcc_e of expr
+  | Set_e of expr * expr
   | K (* takes an already evaluated argument that waits this expr as its
          continuation *)
   | Cont_e of id (* id of the reified continuation binded in the environnement *)
@@ -122,6 +123,7 @@ let rec to_string (e : expr) : string =
     | Delayed_e (ex) -> "delay " ^ to_string ex
     | Forced_e (ex) -> to_string ex
     | Callcc_e ex -> "call_cc " ^ (to_string ex)
+    | Set_e (ex1, ex2) -> "set! " ^ (to_string ex1) ^ " " ^(to_string ex2)
     | Eval_e ex -> "eval " ^ (to_string ex)
     | Quote_e ex -> "'" ^ (to_string ex)
     | K -> "k"

@@ -67,26 +67,66 @@ let rec eval_one (env : env) (expr : expr) : env =
 and eval_list (env : env) (expr_list : expr list) : env =
   List.fold_left eval_one env expr_list
 
-let rec repl env =
+let rec repl env global_env =
   print_string "> ";
   try
     let input = read_console() in
     if input = ":help\n" || input = ":h\n"then
-      (print_help (); repl env)
+      (print_help (); repl env global_env)
     else if input = ":quit\n" || input = ":q\n"then ()
     else if input = ":bindings\n" || input = ":b\n" then
-      (print_bindings env; repl env)
+      (print_bindings env; repl env global_env)
     else
       let expr_list = parse input in
       let env = eval_list env expr_list in
-      repl env
+      repl env global_env
   with End_of_file -> print_endline ""
     | Runtime s ->
         (print_endline ("Runtime Exception: " ^ s);
-         repl env)
+         repl env global_env)
     | Parsing.Parse_error ->
         (print_endline "Parse Error";
-         repl env)
+         repl env global_env)
 
 (* start with empty global environment *)
-let _ = repl []
+
+let global_env = ref
+    ["+", ref (Closure
+                 (Fun_e (["a"; "b"], Binop_e (Plus, Id_e "a", Id_e "b")), []));
+    "-", ref (Closure
+                 (Fun_e (["a"; "b"], Binop_e (Minus, Id_e "a", Id_e "b")), []));
+    "*", ref (Closure
+                 (Fun_e (["a"; "b"], Binop_e (Mul, Id_e "a", Id_e "b")), []));
+    "/", ref (Closure
+                 (Fun_e (["a"; "b"], Binop_e (Div, Id_e "a", Id_e "b")), []));
+    "=", ref (Closure
+                 (Fun_e (["a"; "b"], Binop_e (Eq, Id_e "a", Id_e "b")), []));
+    "!=", ref (Closure
+                 (Fun_e (["a"; "b"], Binop_e (Neq, Id_e "a", Id_e "b")), []));
+    ">", ref (Closure
+                 (Fun_e (["a"; "b"], Binop_e (Gt, Id_e "a", Id_e "b")), []));
+    ">=", ref (Closure
+                 (Fun_e (["a"; "b"], Binop_e (Geq, Id_e "a", Id_e "b")), []));
+    "<", ref (Closure
+                 (Fun_e (["a"; "b"], Binop_e (Lt, Id_e "a", Id_e "b")), []));
+    "<=", ref (Closure
+                 (Fun_e (["a"; "b"], Binop_e (Leq, Id_e "a", Id_e "b")), []));
+    "&", ref (Closure
+                 (Fun_e (["a"; "b"], Binop_e (And, Id_e "a", Id_e "b")), []));
+    "|", ref (Closure
+                 (Fun_e (["a"; "b"], Binop_e (Or, Id_e "a", Id_e "b")), []));
+    "call-with-current-continuation", ref (Closure
+                 (Fun_e (["a"], Callcc_e (Id_e "a")), []));
+    "eval", ref (Closure (Fun_e (["a"], Eval_e (Id_e "a")), []));
+    "~", ref (Closure (Fun_e (["a"], Unop_e (Not, Id_e "a")), []));
+    "car", ref (Closure (Fun_e (["a"], Unop_e (Car, Id_e "a")), []));
+    "cdr", ref (Closure (Fun_e (["a"], Unop_e (Cdr, Id_e "a")), []));
+    "null", ref (Closure (Fun_e (["a"], Unop_e (Null, Id_e "a")), []));
+    "load", ref (Closure (Fun_e (["a"], Unop_e (Load, Id_e "a")), []));
+    "delay", ref (Closure (Fun_e (["a"], Delayed_e (Id_e "a")), []));
+    "force", ref (Closure (Fun_e (["a"], Forced_e (Id_e "a")), []));
+    "set!", ref (Closure (Fun_e (["a"], Set_e (Id_e "a", Id_e "b")), []));
+    ]
+
+
+let _ = repl [] global_env

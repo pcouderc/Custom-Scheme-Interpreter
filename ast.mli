@@ -41,6 +41,7 @@ type expr =
   | Delayed_e of expr
   | Forced_e of expr
   | Callcc_e of expr
+  | Set_e of expr * expr
   | K
   | Cont_e of id
   | Eval_e of expr
