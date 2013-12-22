@@ -3,7 +3,7 @@
 %}
 
 %token DEFINE DEFINEREC LAMBDA LET LETREC IF BEGIN SET
-%token LPAREN RPAREN
+%token LPAREN RPAREN LBRACK RBRACK
 %token DELAY FORCE CALLCC EVAL
 %token DOT QUOTE
 %token EQ NEQ LT LEQ GT GEQ AND OR NOT
@@ -55,9 +55,11 @@ expr :
  | LPAREN LAMBDA idseq expr RPAREN    { Fun_e ($3, $4) }
  | LPAREN DEFINE idseq expr RPAREN    { Def_e ($3, $4) }
  | LPAREN DEFINEREC idseq expr RPAREN { Defrec_e ($3, $4) }
- | LPAREN LET ID expr expr RPAREN     { Let_e ($3, $4, $5) }
+ | LPAREN LET ID expr expr RPAREN
+     { Let_e ($3, $4, $5) }
  | LPAREN SET ID expr RPAREN          { Set_e (Id_e $3, $4) }
- | LPAREN LETREC ID expr expr RPAREN  { Letrec_e ($3, $4, $5) }
+ | LPAREN LETREC ID expr expr RPAREN
+     { Letrec_e ($3, $4, $5) }
  | LPAREN IF expr expr expr RPAREN    { If_e ($3, $4, $5) }
  | LPAREN expr seq RPAREN             { Apply_e ($2, $3) }
  | LPAREN LIST seq RPAREN

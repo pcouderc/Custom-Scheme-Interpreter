@@ -38,6 +38,8 @@ rule token = parse
     id as id   { try Hashtbl.find keyword_tbl (String.lowercase id) with Not_found -> ID id }
   | "("            { LPAREN }
   | ")"            { RPAREN }
+  | "["            { LBRACK }
+  | "]"            { RBRACK }
   | "'"            { QUOTE }
   | "\""           { STRING (String.concat "" (string lexbuf)) }
   | "#t"           { TRUE }

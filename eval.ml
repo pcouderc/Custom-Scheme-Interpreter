@@ -186,10 +186,11 @@ and cont stack k env =
   | ast :: k -> eval_with_k stack k ast env
 
 and eval_with_k stack k ast env =
-  (* Format.printf "eval: %s@.stack:%s@.cont:%s@.-------@." *)
+  (* Format.printf "eval: %s@.stack:%s@.cont:%s@." *)
   (*   (to_string ast) *)
   (*   (value_list_to_string stack) *)
   (*   (ast_list_to_string k); *)
+  (* Format.printf "env:"; print_env env; Format.printf"@.-------@."; *)
   match ast with
   | K -> runtime "K shouldn't be evaluated"
   | Int_e n -> cont ((Int n) :: stack) k env
@@ -259,7 +260,7 @@ and eval_with_k stack k ast env =
     (* Format.printf "In Apply_e (K, es) case@."; *)
     let f = List.hd stack in
     let stack = List.tl stack in
-    let foo acc ele = apply_with_k stack k acc
+    let foo acc ele = apply_with_k stack k env acc
       (eval_with_k stack (K :: k) ele env) in
     (* let k = if is_cont f then K :: k else k in *)
     (* Format.printf "fun: %s, stack: %s@." *)
@@ -278,10 +279,22 @@ and eval_with_k stack k ast env =
   | Apply_e (e1, es) ->
     eval_with_k stack (Apply_e (K, es) :: k) e1 env
 
+
+
+  | Letrec_e (x, K, K) ->
+    cont stack k env
+  | Letrec_e (x, K, e2) ->
+    let e = List.hd stack in
+    let stack = List.tl stack in
+    update x e env;
+    eval_with_k stack (Letrec_e (x, K, K) :: k) e2 env
   | Letrec_e (x, e1, e2) ->
-    Format.printf "Not evaluated with continuation yet@.";
-    let newenv = (bind x (Undef) env) in
-    update x (eval ast e1 newenv) newenv; (eval ast e2 newenv)
+    let env = bind x Undef env in
+    eval_with_k stack (Letrec_e (x, K, e2) :: k) e1 env
+  (* | Letrec_e (x, e1, e2) -> *)
+  (*   Format.printf "Not evaluated with continuation yet@."; *)
+  (*   let newenv = (bind x (Undef) env) in *)
+  (*   update x (eval ast e1 newenv) newenv; (eval ast e2 newenv) *)
 
   | Fun_e (xs, e) ->
     cont (Closure (Fun_e(xs,e),env) :: stack) k env
@@ -367,16 +380,17 @@ and eval_with_k stack k ast env =
     cont (res :: stack) (K :: k) env
   (* | _ -> runtime "No implemented yet" *)
 
-and apply_with_k stack k (f : value) (v : value) : value =
+and apply_with_k stack k env (f : value) (v : value) : value =
   (* Format.printf "apply: %s : %s@.stack:%s@.cont:%s@.-----------@." *)
   (*   (value_to_string f) (value_to_string v) *)
   (*   (value_list_to_string stack) *)
   (*   (ast_list_to_string k); *)
  (match f with
-   | Closure(Fun_e(xs,e),env) -> (match xs with
+   | Closure(Fun_e(xs,e),cenv) -> (match xs with
        | [] -> eval_with_k stack k e env
        | idhd::idtl ->
-         let newenv = bind idhd v env in
+         let newenv = bind idhd v cenv in
+         let newenv = newenv @ env in
          Closure(Fun_e(idtl,e),newenv))
    | Cont (stack, k, env) ->
      (* Format.printf *)
