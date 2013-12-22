@@ -42,30 +42,30 @@ let read_file (filename : string) : string =
     with End_of_file -> s in
   read_lines ""
 
-let rec eval_one (env : env) (expr : expr) : env =
+let rec eval_one (env : env) (expr : expr) =
   match expr with
       Def_e (xs, e) -> (match xs with
-       | x::[] -> print_value (eval Nil_e e env); (bind x (eval Nil_e e env) env)
+       | x::[] -> print_value (eval Nil_e e env); (g_bind x (eval Nil_e e env))
        | x::tl ->  print_value (eval Nil_e (Fun_e(tl,e)) env);
-          (bind x (eval Nil_e (Fun_e(tl,e)) env) env)
+          (g_bind x (eval Nil_e (Fun_e(tl,e)) env))
        | [] -> runtime "Not possible")
     | Defrec_e (xs, e) -> (match xs with
        | x::[] -> print_value (eval Nil_e e env);
-         let newenv = bind x (Undef) env in
-           update x (eval Nil_e e newenv) newenv; newenv
-       | x::tl -> let newenv = (bind x (Undef) env) in
-           print_value (eval Nil_e (Fun_e(tl,e)) env);
-           update x (eval Nil_e (Fun_e(tl,e)) newenv) newenv; newenv
+         g_bind x (Undef);
+         g_update x (eval Nil_e e env)
+       | x::tl -> g_bind x (Undef);
+         print_value (eval Nil_e (Fun_e(tl,e)) env);
+         g_update x (eval Nil_e (Fun_e(tl,e)) env)
        | _ -> runtime "Not possible rec")
     | Unop_e (Load, e) -> (match (eval Nil_e e env) with
        | Str s -> eval_list env (parse (read_file s))
-       | _ -> print_string "Not possible load"; env)
+       | _ -> print_string "Not possible load")
     | _ ->
         let v = eval Nil_e expr env in
-          print_value v; env
+          print_value v
 
-and eval_list (env : env) (expr_list : expr list) : env =
-  List.fold_left eval_one env expr_list
+and eval_list (env : env) (expr_list : expr list) =
+  List.iter (eval_one env) expr_list
 
 let rec repl env =
   print_string "> ";
@@ -78,7 +78,7 @@ let rec repl env =
       (print_bindings env; repl env)
     else
       let expr_list = parse input in
-      let env = eval_list env expr_list in
+      eval_list env expr_list;
       repl env
   with End_of_file -> print_endline ""
     | Runtime s ->

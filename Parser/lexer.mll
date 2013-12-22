@@ -15,7 +15,8 @@ let keywords =
      "letrec", LETREC;
      "definerec", DEFINEREC;
      "quote", QUOTE;
-     "eval", EVAL;
+     "set!", SET;
+     (* "eval", EVAL; *)
     ]
 
 
@@ -48,7 +49,7 @@ rule token = parse
   | eof            { EOF }
   | _              { raise LexError }
 and string = parse
-    "\\\\"           { "\\" :: (string lexbuf) }
+    "\\\\"           { "\\" :: (string lexbuf)}
   | "\\\""           { "\"" :: (string lexbuf) }
   | "\\n"            { "\n" :: (string lexbuf) }
   | "\\t"            { "\t" :: (string lexbuf) }

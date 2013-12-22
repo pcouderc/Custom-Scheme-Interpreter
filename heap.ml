@@ -3,6 +3,7 @@ open Util
 
 type value =
   | Int of int
+  | Id of id
   | Str of string
   | Ast of expr
   | Bool of bool
@@ -48,6 +49,7 @@ let rec value_to_string (x : value) : string =
   in
     match x with
     | Int n -> string_of_int n
+    | Id i -> i
     | Str s -> s
     | Ast expr -> "'" ^ Ast.to_string expr
     | Bool b -> string_of_bool b
@@ -92,7 +94,8 @@ let global_env = ref
                  (Fun_e (["a"; "b"], Binop_e (Or, Id_e "a", Id_e "b")), []));
     "call-with-current-continuation", ref (Closure
                  (Fun_e (["a"], Callcc_e (Id_e "a")), []));
-    "evalp", ref (Closure (Fun_e (["a"], Eval_e (Id_e "a")), []));
+    "eval",
+    ref (Closure (Fun_e (["eval_binded_value"], Eval_e (Id_e "eval_binded_value")), []));
     "~", ref (Closure (Fun_e (["a"], Unop_e (Not, Id_e "a")), []));
     "car", ref (Closure (Fun_e (["a"], Unop_e (Car, Id_e "a")), []));
     "cdr", ref (Closure (Fun_e (["a"], Unop_e (Cdr, Id_e "a")), []));
@@ -100,5 +103,29 @@ let global_env = ref
     "load", ref (Closure (Fun_e (["a"], Unop_e (Load, Id_e "a")), []));
     "delay", ref (Closure (Fun_e (["a"], Delayed_e (Id_e "a")), []));
     "force", ref (Closure (Fun_e (["a"], Forced_e (Id_e "a")), []));
-    "set!", ref (Closure (Fun_e (["a"; "b"], Set_e (Id_e "a", Id_e "b")), []));
+    (* "set!", ref (Closure (Fun_e (["a"; "b"], Set_e (Id_e "a", Id_e "b")), [])); *)
     ]
+
+(* lookup a value in the environment *)
+let g_lookup x =
+ let filtlist = List.filter (fun y->let (id,value)=y in (id=x)) !global_env in
+  (match filtlist with
+   | [] -> None
+   | hd::tl -> Some !(snd(hd)))
+
+
+(* update binding x to value v in the environment *)
+let g_update (x : id) (v : value) =
+ let filtlist = List.filter (fun y->let (id,value)=y in (id=x)) !global_env in
+  (match filtlist with
+   | [] -> runtime "updating nothing"
+   | hd::tl -> snd(hd):=v)
+
+(* create new binding, append to environment *)
+let g_bind (x : id) (v : value) =
+  global_env := (x,ref v) :: !global_env
+
+
+let print_env env =
+  List.iter (fun (i, _) -> Format.printf "%s; " i) env;
+  Format.printf "@."

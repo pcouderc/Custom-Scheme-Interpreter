@@ -1,5 +1,6 @@
 type value =
     Int of int
+  | Id of Ast.id
   | Str of string
   | Ast of Ast.expr
   | Bool of bool
@@ -28,3 +29,13 @@ val bind : Ast.id -> value -> env -> env
 val value_to_string : value -> string
 
 val value_list_to_string : value list -> string
+
+(** Functions to manipulate the global environment *)
+
+val g_lookup : Ast.id -> value option
+
+val g_update : Ast.id -> value -> unit
+
+val g_bind : Ast.id -> value -> unit
+
+val print_env : env -> unit

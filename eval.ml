@@ -152,44 +152,44 @@ and apply_unop (op : op) (v : value) : value =
   | _ -> runtime "not a unary operator"
 
 
-and to_continuation first env ast =
-  match ast with
-  | Int_e _ | Str_e _ | Bool_e _
-  | Def_e _ | Defrec_e _ | Nil_e | Id_e _ -> [ast]
-  | Cons_e (x, y) -> assert false
-  | Let_e (x, e1, e2) -> assert false
-  | Letrec_e (x, e1, e2) -> assert false
-  | If_e (b, e1, e2) -> assert false
-  | Apply_e (e1, es) -> assert false
-  | Fun_e (xs, e) -> [ast]
-  | Binop_e (op, e1, e2) ->
-    (Fun_e (["x"], Binop_e (op, Id_e "x", e2))) ::
-      [Fun_e (["x"], Binop_e (op, e1, Id_e "x"))]
-  | Unop_e (op, e) -> [Fun_e (["x"], Unop_e (op, (Id_e "x")))]
-  | Delayed_e (ex) -> [Fun_e (["x"], Delayed_e (Id_e "x"))]
-  | Forced_e (del_expr) -> [Fun_e (["x"], Forced_e (Id_e "x"))]
-  | Quote_e expr -> [ast]
-  | Eval_e expr -> [Fun_e (["x"], Eval_e (Id_e "x"))]
-  | Callcc_e expr -> [Fun_e (["x"], Callcc_e (Id_e "x"))]
-  | K -> assert false
-  | Cont_e _ -> assert false
-  | _ -> runtime "Not implemented yet"
+(* and to_continuation first env ast = *)
+(*   match ast with *)
+(*   | Int_e _ | Str_e _ | Bool_e _ *)
+(*   | Def_e _ | Defrec_e _ | Nil_e | Id_e _ -> [ast] *)
+(*   | Cons_e (x, y) -> assert false *)
+(*   | Let_e (x, e1, e2) -> assert false *)
+(*   | Letrec_e (x, e1, e2) -> assert false *)
+(*   | If_e (b, e1, e2) -> assert false *)
+(*   | Apply_e (e1, es) -> assert false *)
+(*   | Fun_e (xs, e) -> [ast] *)
+(*   | Binop_e (op, e1, e2) -> *)
+(*     (Fun_e (["x"], Binop_e (op, Id_e "x", e2))) :: *)
+(*       [Fun_e (["x"], Binop_e (op, e1, Id_e "x"))] *)
+(*   | Unop_e (op, e) -> [Fun_e (["x"], Unop_e (op, (Id_e "x")))] *)
+(*   | Delayed_e (ex) -> [Fun_e (["x"], Delayed_e (Id_e "x"))] *)
+(*   | Forced_e (del_expr) -> [Fun_e (["x"], Forced_e (Id_e "x"))] *)
+(*   | Quote_e expr -> [ast] *)
+(*   | Eval_e expr -> [Fun_e (["x"], Eval_e (Id_e "x"))] *)
+(*   | Callcc_e expr -> [Fun_e (["x"], Callcc_e (Id_e "x"))] *)
+(*   | K -> assert false *)
+(*   | Cont_e _ -> assert false *)
+(*   | _ -> runtime "Not implemented yet" *)
 
 (** Somes tests to represent and evaluate using continuation *)
 
 and cont stack k env =
-  Format.printf "cont: @.stack:%s@.cont:%s@.-----------@."
-    (value_list_to_string stack)
-    (ast_list_to_string k);
+  (* Format.printf "cont: @.stack:%s@.cont:%s@.-----------@." *)
+  (*   (value_list_to_string stack) *)
+  (*   (ast_list_to_string k); *)
   match k with
   | [] | K :: _ -> List.hd stack
   | ast :: k -> eval_with_k stack k ast env
 
 and eval_with_k stack k ast env =
-  Format.printf "eval: %s@.stack:%s@.cont:%s@.-------@."
-    (to_string ast)
-    (value_list_to_string stack)
-    (ast_list_to_string k);
+  (* Format.printf "eval: %s@.stack:%s@.cont:%s@.-------@." *)
+  (*   (to_string ast) *)
+  (*   (value_list_to_string stack) *)
+  (*   (ast_list_to_string k); *)
   match ast with
   | K -> runtime "K shouldn't be evaluated"
   | Int_e n -> cont ((Int n) :: stack) k env
@@ -202,7 +202,7 @@ and eval_with_k stack k ast env =
     begin
       match (lookup id env) with
       | None ->
-        begin match (lookup id !global_env) with
+        begin match (g_lookup id) with
         | None -> cont (Nil :: stack) k env
         | Some v -> cont (v :: stack) k env
         end
@@ -321,12 +321,12 @@ and eval_with_k stack k ast env =
         eval_with_k stack (Quote_e K :: k) expr env
       | _ -> cont (Ast expr :: stack) k env
     end
+
   | Eval_e K ->
     begin
       match List.hd stack with
-        Ast e -> Format.printf "is_ast@.";
-          eval_with_k stack k e env
-      | e -> Format.printf "is_not_ast@."; cont (e :: stack) k env
+        Ast e -> eval_with_k (List.tl stack) k e env
+      | e -> cont (e :: stack) k env
     end
   | Eval_e expr ->
     eval_with_k stack (Eval_e K :: k) expr env
@@ -334,7 +334,6 @@ and eval_with_k stack k ast env =
   | Callcc_e K ->
     let expr = List.hd stack in
     let stack = List.tl stack in
-    (* Format.printf "Callcc_e K: %s@." @@ value_to_string expr; *)
     begin match expr with
       Closure (Fun_e ([i], e) as f, c_env) ->
         let env = bind i (Cont (stack, k, env)) env in
@@ -342,17 +341,22 @@ and eval_with_k stack k ast env =
     | _ -> runtime "argument must be of type ('a -> 'b) "
     end
   | Callcc_e expr ->
-    (* Format.printf "Callcc_e %s@." @@ to_string expr; *)
     eval_with_k stack (Callcc_e K :: k) expr env
+
   | Set_e (ex1, K) ->
     let id = begin match ex1 with Id_e i -> i
       | _ -> runtime "first argument must be a ident" end in
     let expr = List.hd stack in
     let stack = List.tl stack in
-    begin try (List.assoc id env) := expr
-      with Not_found ->
-        begin try (List.assoc id !global_env) := expr with Not_found ->
-          runtime ("undefined variable " ^ id) end end;
+    begin
+      match lookup id env with
+      | Some _ -> Format.printf "In Local@."; update id expr env
+      | None ->
+        begin match g_lookup id with
+          | Some _ -> g_update id expr
+          | None ->
+            runtime ("undefined variable " ^ id) end
+    end;
     cont (Nil::stack) k env
   | Set_e (ex1, ex2) ->
     eval_with_k stack (Set_e (ex1, K) :: k) ex2 env
@@ -364,10 +368,10 @@ and eval_with_k stack k ast env =
   (* | _ -> runtime "No implemented yet" *)
 
 and apply_with_k stack k (f : value) (v : value) : value =
-  Format.printf "apply: %s : %s@.stack:%s@.cont:%s@.-----------@."
-    (value_to_string f) (value_to_string v)
-    (value_list_to_string stack)
-    (ast_list_to_string k);
+  (* Format.printf "apply: %s : %s@.stack:%s@.cont:%s@.-----------@." *)
+  (*   (value_to_string f) (value_to_string v) *)
+  (*   (value_list_to_string stack) *)
+  (*   (ast_list_to_string k); *)
  (match f with
    | Closure(Fun_e(xs,e),env) -> (match xs with
        | [] -> eval_with_k stack k e env
