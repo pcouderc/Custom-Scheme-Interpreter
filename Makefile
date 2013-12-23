@@ -10,7 +10,7 @@
 # export PATH = /usr/bin:/bin:/usr/local/bin
 
 SOURCES = util.mli ast.mli Parser/parser.mli heap.mli eval.mli repl.mli \
-util.ml ast.ml Parser/lexer.ml Parser/parser.ml heap.ml eval.ml repl.ml
+util.ml ast.ml Parser/lexer.ml Parser/parser.ml heap.ml eval.ml
 
 .PHONY: all
 all: interpreter
@@ -25,8 +25,12 @@ clean:
       done; \
     done
 
-interpreter: $(SOURCES)
-	ocamlc -o $@ -g -I Parser str.cma $(SOURCES)
+interpreter: $(SOURCES) repl.ml
+	ocamlc -o $@ -g -I Parser str.cma $(SOURCES) repl.ml
+
+test: $(SOURCES) test.ml
+	ocamlc -o $@ -g -I Parser str.cma $(SOURCES) test.ml
+	./test
 
 Parser/parser.mli Parser/parser.ml: Parser/parser.mly
 	ocamlyacc -v Parser/parser.mly

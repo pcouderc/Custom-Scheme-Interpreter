@@ -52,7 +52,8 @@ expr :
  | QUOTE expr { Quote_e $2 }
  | LPAREN BEGIN seq RPAREN { Begin_e $3 }
  | LPAREN QUOTE expr RPAREN           { Quote_e $3 }
- | LPAREN LAMBDA idseq expr RPAREN    { Fun_e ($3, $4) }
+ | LPAREN LAMBDA LPAREN ids RPAREN expr RPAREN    { Fun_e ($4, $6) }
+ | LPAREN EVAL expr RPAREN            { Eval_e $3 }
  | LPAREN DEFINE idseq expr RPAREN    { Def_e ($3, $4) }
  | LPAREN DEFINEREC idseq expr RPAREN { Defrec_e ($3, $4) }
  | LPAREN LET ID expr expr RPAREN

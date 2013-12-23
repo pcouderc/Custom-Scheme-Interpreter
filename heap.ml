@@ -54,12 +54,15 @@ let rec value_to_string (x : value) : string =
     | Ast expr -> "'" ^ Ast.to_string expr
     | Bool b -> string_of_bool b
     | Closure (a,b) -> "<fun>: " ^ Ast.to_string a
-    | Cont (_,_,_) -> "<k>"
+    | Cont (vl, exprl, env) ->
+      Format.sprintf "<#k @.values : %s@. expr : %s@.#>"
+        (value_list_to_string vl)
+        (List.fold_left (fun acc e -> acc ^ ", " ^ Ast.to_string e) "" exprl)
     | Nil -> "()"
     | Cons  _ -> listify (cons_to_string x)
     | Undef -> failwith "Oppan"
 
-let value_list_to_string vl =
+and value_list_to_string vl =
   let rec step = function
     | [] -> ""
     | v :: l -> value_to_string v ^ "; " ^ step l
@@ -71,7 +74,7 @@ let global_env = ref
     ["+", ref (Closure
                  (Fun_e (["#a"; "#b"], Binop_e (Plus, Id_e "#a", Id_e "#b")), []));
     "-", ref (Closure
-                 (Fun_e (["#a"; "#b"], Binop_e (Minus, Id_e "#a", Id_e "#b")), []));
+            (Fun_e (["#a"; "#b"], Binop_e (Minus, Id_e "#a", Id_e "#b")), []));
     "*", ref (Closure
                  (Fun_e (["#a"; "#b"], Binop_e (Mul, Id_e "a", Id_e "b")), []));
     "/", ref (Closure
@@ -94,8 +97,7 @@ let global_env = ref
                  (Fun_e (["#a"; "#b"], Binop_e (Or, Id_e "#a", Id_e "#b")), []));
     "call-with-current-continuation", ref (Closure
                  (Fun_e (["#a"], Callcc_e (Id_e "#a")), []));
-    "eval",
-    ref (Closure (Fun_e (["#a"], Eval_e (Id_e "#a")), []));
+    "eval", ref (Closure (Fun_e (["#a"], Eval_e (Id_e "#a")), []));
     "~", ref (Closure (Fun_e (["#a"], Unop_e (Not, Id_e "#a")), []));
     "car", ref (Closure (Fun_e (["#a"], Unop_e (Car, Id_e "#a")), []));
     "cdr", ref (Closure (Fun_e (["#a"], Unop_e (Cdr, Id_e "#a")), []));

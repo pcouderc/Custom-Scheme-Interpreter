@@ -1,1 +1,1 @@
-ledit ./interpreter.exe
+rlwrap ./interpreter

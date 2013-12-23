@@ -13,6 +13,7 @@ let keywords =
      "nil", NIL;
      "cons", CONS;
      "letrec", LETREC;
+     "evalp", EVAL;
      "definerec", DEFINEREC;
      "quote", QUOTE;
      "set!", SET;
