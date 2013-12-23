@@ -253,23 +253,20 @@ and eval_with_k stack k ast env =
 
   | Apply_e (K, [K]) -> assert false
   | Apply_e (K, es) ->
-    (* Format.printf "In Apply_e (K, es) case@."; *)
     let f = List.hd stack in
     let stack = List.tl stack in
+    let f = match f with
+      | Closure(fu, cenv) -> Closure(fu, env @ cenv)
+      | _ -> f in
     let foo acc ele = apply_with_k stack k env acc
       (eval_with_k stack (K :: k) ele env) in
-    (* let k = if is_cont f then K :: k else k in *)
-    (* Format.printf "fun: %s, stack: %s@." *)
-    (*   (value_to_string f) (value_list_to_string stack); *)
     let res = List.fold_left foo f es in
-    (* Format.printf "res: %s@." (value_to_string res); *)
     (match res with
-    | Closure(Fun_e(xs,e),env) ->
+    | Closure(Fun_e(xs,e), env) ->
       (match xs with
       | [] -> eval_with_k stack k e env
       | _ -> res)
     | Cont (stack, k, env) ->
-      (* Format.printf "In cont case@;";  *)
       cont stack k env
     | _ -> runtime "No closure match 2")
   | Apply_e (e1, es) ->
@@ -287,10 +284,6 @@ and eval_with_k stack k ast env =
   | Letrec_e (x, e1, e2) ->
     let env = bind x Undef env in
     eval_with_k stack (Letrec_e (x, K, e2) :: k) e1 env
-  (* | Letrec_e (x, e1, e2) -> *)
-  (*   Format.printf "Not evaluated with continuation yet@."; *)
-  (*   let newenv = (bind x (Undef) env) in *)
-  (*   update x (eval ast e1 newenv) newenv; (eval ast e2 newenv) *)
 
   | Fun_e (xs, e) ->
     cont (Closure (Fun_e(xs,e),env) :: stack) k env
@@ -376,22 +369,20 @@ and eval_with_k stack k ast env =
       | None -> Nil
       | Some e -> e in
     cont (res :: stack) (K :: k) env
-  (* | _ -> runtime "No implemented yet" *)
 
 and apply_with_k stack k env (f : value) (v : value) : value =
-  (* Format.printf "apply: %s : %s@.stack:%s@.cont:%s@.-----------@." *)
+  (* Format.printf "apply: %s : %s@.stack:%s@.cont:%s@." *)
   (*   (value_to_string f) (value_to_string v) *)
   (*   (value_list_to_string stack) *)
   (*   (ast_list_to_string k); *)
+  (* Format.printf "env:"; print_env env; Format.printf"@.-------@."; *)
  (match f with
    | Closure(Fun_e(xs,e),cenv) -> (match xs with
        | [] -> eval_with_k stack k e env
        | idhd::idtl ->
          let newenv = bind idhd v cenv in
-         let newenv = newenv @ env in
          Closure(Fun_e(idtl,e),newenv))
    | Cont (stack, k, env) ->
-     (* Format.printf *)
      Cont ((v :: stack),k,env)
    | _ -> runtime "No closure match")
 
