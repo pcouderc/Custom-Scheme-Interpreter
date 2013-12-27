@@ -1,3 +1,41 @@
+Authors:
+  Remy El Sibaïe - Besognet <besognet.remy@gmail.com>
+  Pierrick Couderc <pierrick.couderc@gmail.com>
+    students at Université Pierre et Marie Curie
+
+
+This small interpreter has been modified to be able to use Call/cc, the
+quotations and some imperative features (begin and set!), and almost almost
+every construct can now be used as primitives and then given as first-order
+functions.
+
+The most important case is Call/cc, and the explainations are explained below.
+
+## Modifications
+
+What has been modified:
+- Parser/lexer.mll and Parser/parser.mly: many constructs have been removed to
+be used as primitives
+- ast.ml[i]: added the Callcc, K, Cont_e, Eval_e, Quote_e. The first three are
+for Call/cc, the others are the quoted expressions and the evaluation case.
+- heap.ml[i]: Many features added:
+  - In value, Ast for quoted expression and Cont for reified continuations
+  - A global environment, which contains every primitives at start, and will
+  contain every expression with "define" and "definerec". There are also the
+  functions to use it, to avoid the reference manipulation
+- eval_cont.ml[i] contains the eval function, heavily modified to use a call
+(or continuation) stack and a value stack, that allows the use of call/cc
+- eval.ml: slightly modified to call the eval_with_k from Eval_cont instead of
+the eval function
+- repl.ml: eval_one modified to allocate in the global env instead of passing a
+local env
+- test.ml: a program to test the evaluation of the added constructs
+
+
+## Call/cc and the evaluation function modification
+
+### Evaluation using stack and continuation stack
+
 To be able to use continuations as first-order values, we have to completely
 redesign the evaluation process. To do that, we introduce two new parameters in
 the evaluation function (named "eval_with_k") : the stack and k.
@@ -29,6 +67,8 @@ the stack and call cont.
 - In cont, the k-stack is empty, we then return the last evaluated value,
 meaning the first on the stack. Its continuation, in that case, is the repl
 print operation.
+
+### Call/cc
 
 This transformation allows then the reification on the continuation, and then
 the ability to pass it to a function using call-with-current-continuation
