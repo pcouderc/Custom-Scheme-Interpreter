@@ -9,8 +9,8 @@
 # export SHELL = /bin/bash
 # export PATH = /usr/bin:/bin:/usr/local/bin
 
-SOURCES = util.mli ast.mli Parser/parser.mli heap.mli eval.mli repl.mli \
-util.ml ast.ml Parser/lexer.ml Parser/parser.ml heap.ml eval.ml
+SOURCES = util.mli ast.mli Parser/parser.mli heap.mli eval_cont.mli eval.mli repl.mli \
+util.ml ast.ml Parser/lexer.ml Parser/parser.ml heap.ml eval_cont.ml eval.ml
 
 .PHONY: all
 all: interpreter
