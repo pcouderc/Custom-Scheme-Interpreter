@@ -11,6 +11,11 @@ functions.
 
 The most important case is Call/cc, and the explainations are explained below.
 
+## Build & Run
+
+Simply build with "make", run with ./interpreter (wrapping it in rlwrap seems a 
+good solution)
+
 ## Modifications
 
 What has been modified:
